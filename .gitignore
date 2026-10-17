@@ -1,0 +1,7 @@
+# Сами ролики тяжёлые и живут в S3. meta.json и prompt.txt — конфиг, их держим в git.
+clips/**/*.mp4
+clips/**/*.mov
+clips/**/*.MP4
+clips/**/*.MOV
+
+.env

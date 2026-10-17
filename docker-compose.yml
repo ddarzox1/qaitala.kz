@@ -1,0 +1,59 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on: [postgres]
+    environment:
+      DATABASE_URL: postgres://qaitala:${POSTGRES_PASSWORD}@postgres:5432/qaitala?sslmode=disable
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
+      KASPI_BASE_URL: http://kaspi:3000
+      KASPI_TOKEN_SN: ${KASPI_TOKEN_SN}
+      KASPI_VTOKEN_SECRET: ${KASPI_VTOKEN_SECRET}
+      KASPI_WEBHOOK_SECRET: ${KASPI_WEBHOOK_SECRET}
+      HF_API_KEY_ID: ${HF_API_KEY_ID}
+      HF_API_KEY_SECRET: ${HF_API_KEY_SECRET}
+      HF_WEBHOOK_SECRET: ${HF_WEBHOOK_SECRET}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_KEY: ${S3_KEY}
+      S3_SECRET: ${S3_SECRET}
+      S3_PUBLIC_BASE: ${S3_PUBLIC_BASE}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      FAKE_PAYMENTS: ${FAKE_PAYMENTS:-false}
+      FAKE_VIDEO: ${FAKE_VIDEO:-false}
+    ports:
+      - "8080:8080"
+
+  kaspi:
+    build:
+      context: .
+      dockerfile: kaspi.Dockerfile
+    restart: unless-stopped
+    environment:
+      TOKEN_SECRET_KEY: ${KASPI_TOKEN_SECRET_KEY}
+      PORT: "3000"
+    volumes:
+      - kaspi_data:/app/data
+    # Портов наружу нет сознательно: внутрь ходит только api по сети compose.
+    # Его демо-интерфейс в интернет смотреть не должен.
+    expose:
+      - "3000"
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: qaitala
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: qaitala
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qaitala"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  kaspi_data:
+  pg_data:

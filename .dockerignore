@@ -1,0 +1,4 @@
+clips/
+.git/
+.env
+docker-compose*.yml

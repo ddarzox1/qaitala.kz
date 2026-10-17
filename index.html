@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qaitala.kz — повтори тренд со своим лицом</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&family=Unbounded:wght@600;700&display=swap&subset=cyrillic,cyrillic-ext" rel="stylesheet">
+<style>
+html,body{margin:0;background:#F5F3EE;color:#17171A;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button,input{font-family:inherit}
+a{color:#17171A;text-decoration:underline;text-underline-offset:3px}
+a:hover{color:#55554F}
+/* ponytail: style-hover/active/focus из .dc.html — обычным CSS, одно значение нажатия вместо трёх */
+.press:active{transform:scale(.98)}
+.card:hover .thumb{transform:translateY(-3px)}
+input:focus{border-color:#17171A}
+@keyframes kb{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.14) translate(-3%,-4%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes popIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scan{0%{top:-35%}100%{top:105%}}
+@keyframes slide{0%{left:-40%}100%{left:100%}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(210,255,58,0),0 30px 60px -20px rgba(23,23,26,.35)}50%{box-shadow:0 0 0 10px rgba(210,255,58,.35),0 30px 60px -20px rgba(23,23,26,.35)}}
+@keyframes play{from{width:0}to{width:100%}}
+@keyframes check{from{stroke-dashoffset:30}to{stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://unpkg.com/preact@10.25.4/dist/preact.umd.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+const { h, Component, render, createRef } = preact;
+const html = htm.bind(h);
+
+const KEY = 'qait-order-v1';
+const fmt = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₸';
+const RES = ['480p', '720p', '1080p'];
+
+const T = {
+  ru: { headline:'Повтори тренд со своим лицом', sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', back:'Все видео', sec:'сек', trust:'Без регистрации и подписки', help:'Вопросы? Напиши в WhatsApp', open:'Открыть',
+    empty:'Пока ничего нет. Загляни позже.', loadErr:'Не удалось загрузить каталог', retryLoad:'Повторить',
+    resumeGen:'Твоё видео создаётся', resumeDone:'Твоё видео готово', resumeFail:'Нужно другое фото',
+    quality:'Качество', slotHint:'Лицо крупно, хороший свет', added:'Фото добавлено', replace:'Заменить',
+    uploadErr:'Это не похоже на фото. Подойдёт JPG, PNG или HEIC.', retryNote:'Повтор бесплатный — оплата уже засчитана.',
+    ctaUpload:'Загрузить фото', ctaUploadMore:'Загрузить ещё фото', ctaCreate:'Создать за', ctaRetry:'Создать заново · бесплатно', sending:'Загружаем',
+    payTitle:'Оплата', total:'К оплате', oneTime:'Разовый платёж, без подписки', emailLabel:'Email для ссылки на видео', optional:'необязательно',
+    pay:'Оплатить', opening:'Открываем Kaspi', payFail:'Не получилось начать оплату. Попробуй ещё раз.', afterPay:'Начнём создавать видео сразу после оплаты',
+    genTitle:'Создаём твоё видео', genNote:'Можешь оставить страницу открытой или вернуться позже', usually:'обычно 2–3 минуты', steps:['Изучаем фото','Ставим свет','Собираем кадры','Добавляем движение','Финальные штрихи'],
+    orderLink:'Ссылка на твой заказ', copy:'Копировать', copied:'Скопировано',
+    ready:'Готово', download:'Скачать видео', share:'Поделиться', more:'Создать ещё', keep:'Видео доступно по ссылке 30 дней',
+    failTitle:'С этим фото не получилось', failText:'Так бывает, если лицо плохо видно или в кадре несколько людей. Загрузи другое фото — повтор бесплатный.', retry:'Загрузить другое фото', refund:'Вернуть деньги', refundNote:'Заявка принята. Деньги вернутся на карту в течение 1–3 дней.' },
+  kz: { headline:'Трендті өз бетіңмен қайтала', sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', trust:'Тіркелусіз және жазылымсыз', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу',
+    empty:'Әзірге ештеңе жоқ. Кейінірек кіріп шық.', loadErr:'Каталогты жүктеу мүмкін болмады', retryLoad:'Қайталау',
+    resumeGen:'Видеоң жасалып жатыр', resumeDone:'Видеоң дайын', resumeFail:'Басқа фото керек',
+    quality:'Сапасы', slotHint:'Бет анық, жарық жақсы', added:'Фото қосылды', replace:'Ауыстыру',
+    uploadErr:'Бұл фото емес сияқты. JPG, PNG немесе HEIC келеді.', retryNote:'Қайталау тегін — төлем есептелді.',
+    ctaUpload:'Фото жүктеу', ctaUploadMore:'Тағы фото жүктеу', ctaCreate:'Жасау ·', ctaRetry:'Қайта жасау · тегін', sending:'Жүктеп жатырмыз',
+    payTitle:'Төлем', total:'Төленетін сома', oneTime:'Бір реттік төлем, жазылымсыз', emailLabel:'Видео сілтемесі үшін email', optional:'міндетті емес',
+    pay:'Төлеу', opening:'Kaspi ашылуда', payFail:'Төлемді бастау мүмкін болмады. Қайта көр.', afterPay:'Видеоны төлемнен кейін бірден жасай бастаймыз',
+    genTitle:'Видеоңды жасап жатырмыз', genNote:'Бетті ашық қалдыруға немесе кейін оралуға болады', usually:'әдетте 2–3 минут', steps:['Фотоны зерттеп жатырмыз','Жарық қойып жатырмыз','Кадрларды жинап жатырмыз','Қозғалыс қосып жатырмыз','Соңғы штрихтар'],
+    orderLink:'Тапсырысыңның сілтемесі', copy:'Көшіру', copied:'Көшірілді',
+    ready:'Дайын', download:'Видеоны жүктеу', share:'Бөлісу', more:'Тағы жасау', keep:'Видео сілтеме арқылы 30 күн қолжетімді',
+    failTitle:'Бұл фотомен шықпады', failText:'Бет анық көрінбесе немесе кадрда бірнеше адам болса, солай болады. Басқа фото жүкте — қайталау тегін.', retry:'Басқа фото жүктеу', refund:'Ақшаны қайтару', refundNote:'Өтініш қабылданды. Ақша 1–3 күн ішінде картаңа қайтады.' },
+};
+
+// ——— API ———————————————————————————————————————————————————————————————
+
+async function get(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.json();
+}
+async function post(url, body) {
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body || {}) });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.json();
+}
+// Настоящий прогресс загрузки: fetch его не отдаёт, поэтому XHR.
+function postForm(url, form, onProgress) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', url);
+    x.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    x.onload = () => {
+      let data = {};
+      try { data = JSON.parse(x.responseText); } catch (e) {}
+      x.status >= 200 && x.status < 300 ? resolve(data) : reject(new Error(data.error || x.statusText));
+    };
+    x.onerror = () => reject(new Error('сеть недоступна'));
+    x.send(form);
+  });
+}
+
+const ar = t => `${t.aspect_w}/${t.aspect_h}`;
+const priceOf = (t, res) => t['price_' + res];
+const offered = t => RES.filter(r => priceOf(t, r) != null);
+const tokenFromPath = () => (location.pathname.match(/^\/o\/([A-Za-z0-9_-]+)/) || [])[1] || '';
+
+// ——— Живые превью в каталоге ——————————————————————————————————————————
+
+// Крутим только начало ролика: иначе браузер вытянет все 30 секунд файла.
+const PREVIEW_LOOP_SEC = 6;
+// Карточка должна задержаться под курсором или в центре экрана. Быстрый проход
+// мышью и быстрая прокрутка не должны грузить ничего.
+const PREVIEW_DELAY_MS = 350;
+
+function playCard(video) {
+  if (!video) return;
+  if (!video.getAttribute('src')) { video.setAttribute('src', video.dataset.src); video.load(); }
+  video.style.opacity = '1';
+  video.play().catch(() => {}); // обещание отклоняется, если успели увести курсор
+}
+
+function stopCard(video) {
+  if (!video) return;
+  video.style.opacity = '0';
+  video.pause();
+  // Снятый src обрывает докачку: иначе файл продолжит литься уже невидимым.
+  video.removeAttribute('src');
+  video.load();
+}
+
+const cardVideos = () => document.querySelectorAll('.card .thumb video');
+
+const ICON = {
+  back: html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`,
+  mute: html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>`,
+  plus: html`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  tick: html`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>`,
+  warn: html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>`,
+  face: html`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>`,
+  close: html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+  creditCard: html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/></svg>`,
+  lock: html`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`,
+  download: html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D2FF3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>`,
+  dlDone: html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D2FF3A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>`,
+  share: html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg>`,
+  play: html`<svg width="24" height="24" viewBox="0 0 24 24" fill="#17171A"><path d="M8 5v14l11-7z"/></svg>`,
+  checkAnim: html`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" stroke-dasharray="30" style="animation:check .5s .2s ease both"/></svg>`,
+  payDone: html`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" stroke-dasharray="30" style="animation:check .4s ease both"/></svg>`,
+};
+const spinner = (border, top) => html`<span style="width:18px; height:18px; border-radius:50%; border:2.5px solid ${border}; border-top-color:${top}; animation:spin .8s linear infinite"></span>`;
+
+
+class App extends Component {
+  fileRef = createRef();
+  state = {
+    screen:'home', tplId:'', lang:'ru', resolution:'', photos:[], uploadError:'',
+    sheet:null, email:'', step:0, copied:false, playing:true, shared:false, isDesk:false,
+    loading:true, loadError:'', templates:[], order:null, pct:0, busy:false, refunded:false,
+  };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ isDesk: window.innerWidth >= 760 });
+    this.onResize(); window.addEventListener('resize', this.onResize);
+    this.loadTemplates();
+
+    // Заказ живёт по секретной ссылке /o/{token}; localStorage — лишь подсказка,
+    // какой заказ был последним у этого браузера.
+    const token = tokenFromPath() || localStorage.getItem(KEY) || '';
+    if (token) this.loadOrder(token, !!tokenFromPath());
+  }
+  componentDidUpdate(_, prev) {
+    const st = this.state;
+    if (prev.templates !== st.templates || prev.screen !== st.screen || prev.isDesk !== st.isDesk) {
+      this.syncPreviews();
+    }
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+    this.stopTimers(); this.stopPreviews();
+  }
+  stopTimers() { clearInterval(this.stepI); clearInterval(this.pollI); }
+
+  // Десктоп: превью запускает наведение.
+  hoverIn(thumb) {
+    if (!this.state.isDesk) return;
+    clearTimeout(this.hoverT);
+    this.hoverT = setTimeout(() => playCard(thumb.querySelector('video')), PREVIEW_DELAY_MS);
+  }
+  hoverOut(thumb) {
+    if (!this.state.isDesk) return;
+    clearTimeout(this.hoverT);
+    stopCard(thumb.querySelector('video'));
+  }
+
+  // Телефон: наведения нет, поэтому играет карточка, оказавшаяся в центре экрана.
+  // Всегда ровно одна — чтобы прокрутка каталога не тянула все ролики разом.
+  syncPreviews() {
+    this.stopPreviews();
+    const st = this.state;
+    if (st.isDesk || st.screen !== 'home' || !st.templates.length) return;
+
+    this.ratios = new Map();
+    this.io = new IntersectionObserver(entries => {
+      for (const e of entries) this.ratios.set(e.target, e.isIntersecting ? e.intersectionRatio : 0);
+      let best = null, bestRatio = 0;
+      for (const [el, r] of this.ratios) if (r > bestRatio) { best = el; bestRatio = r; }
+      for (const [el] of this.ratios) if (el !== best) stopCard(el.querySelector('video'));
+      clearTimeout(this.centerT);
+      if (best) this.centerT = setTimeout(() => playCard(best.querySelector('video')), PREVIEW_DELAY_MS);
+    }, {
+      // Пересечением считается только середина экрана: карточка «в фокусе» — та,
+      // что пересекла центральную полосу.
+      rootMargin: '-45% 0px -45% 0px',
+      threshold: [0, 0.25, 0.5, 0.75, 1],
+    });
+    document.querySelectorAll('.card .thumb').forEach(el => {
+      this.ratios.set(el, 0);
+      this.io.observe(el);
+    });
+  }
+
+  stopPreviews() {
+    if (this.io) { this.io.disconnect(); this.io = null; }
+    clearTimeout(this.centerT); clearTimeout(this.hoverT);
+    cardVideos().forEach(stopCard);
+  }
+
+  async loadTemplates() {
+    try {
+      const templates = await get('/api/templates?lang=' + this.state.lang);
+      this.setState({ templates, loading:false, loadError:'' });
+    } catch (e) {
+      this.setState({ loading:false, loadError: e.message });
+    }
+  }
+
+  async loadOrder(token, navigate) {
+    try {
+      const order = await get('/api/orders/' + token);
+      this.setState({ order, tplId: order.template_id, resolution: order.resolution });
+      if (navigate) this.applyOrderScreen(order);
+    } catch (e) {
+      localStorage.removeItem(KEY); // заказ протух или токен чужой
+    }
+  }
+
+  applyOrderScreen(order) {
+    if (order.status === 'done') return this.setState({ screen:'result' });
+    if (order.status === 'failed' || order.status === 'refund_requested')
+      return this.setState({ screen:'fail', refunded: order.status === 'refund_requested' });
+    if (order.status === 'paid' || order.status === 'generating') return this.startWatch(order.token);
+    this.setState({ screen:'home' });
+  }
+
+  // Пока идёт генерация, статус спрашиваем у сервера. Бегущие подписи шагов —
+  // украшение, к настоящему прогрессу они отношения не имеют.
+  startWatch(token) {
+    this.stopTimers();
+    this.setState({ screen:'gen', step:0 });
+    window.scrollTo(0, 0);
+    this.stepI = setInterval(() => this.setState(s => ({ step:(s.step + 1) % 5 })), 2200);
+    this.pollI = setInterval(async () => {
+      try {
+        const order = await get('/api/orders/' + token);
+        this.setState({ order });
+        if (order.status === 'done') { this.stopTimers(); this.setState({ screen:'result', playing:true }); }
+        if (order.status === 'failed') { this.stopTimers(); this.setState({ screen:'fail' }); }
+      } catch (e) {}
+    }, 3000);
+  }
+
+  tpl() { return this.state.templates.find(t => t.id === this.state.tplId); }
+
+  open(t) {
+    this.stopTimers();
+    const res = offered(t);
+    this.setState({ screen:'detail', tplId:t.id, resolution: res.includes('720p') ? '720p' : res[0],
+      photos:[], uploadError:'', pct:0 });
+    window.scrollTo(0, 0);
+  }
+
+  pick(i) { this.slot = i; const el = this.fileRef.current; if (el) { el.value = ''; el.click(); } }
+
+  onFile(e) {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    if (!/^image\//.test(f.type) && !/\.(heic|heif)$/i.test(f.name))
+      return this.setState({ uploadError: T[this.state.lang].uploadErr });
+    const photos = this.state.photos.slice();
+    photos[this.slot ?? 0] = { file:f, url: URL.createObjectURL(f) };
+    this.setState({ photos, uploadError:'' });
+  }
+
+  // Заказ создаётся вместе с фото одним запросом — до этого момента на сервере
+  // ничего нет, и передумавший клиент не оставляет мусора.
+  async submit() {
+    const s = this.state, t = this.tpl();
+    const form = new FormData();
+    form.append('template_id', t.id);
+    form.append('resolution', s.resolution);
+    form.append('lang', s.lang);
+    s.photos.forEach(p => form.append('photos', p.file, p.file.name));
+
+    this.setState({ busy:true, pct:0, uploadError:'' });
+    try {
+      const order = await postForm('/api/orders', form, pct => this.setState({ pct }));
+      localStorage.setItem(KEY, order.token);
+      this.setState({ order, busy:false, pct:0, sheet:'open' });
+    } catch (e) {
+      this.setState({ busy:false, pct:0, uploadError: e.message });
+    }
+  }
+
+  async pay() {
+    const s = this.state;
+    if (s.sheet === 'busy' || !s.order) return;
+    this.setState({ sheet:'busy' });
+    try {
+      const res = await post(`/api/orders/${s.order.token}/pay`, { email: s.email });
+      // Переход в Kaspi: на телефоне это deeplink в приложение, на десктопе —
+      // страница оплаты. Возврат произойдёт на /o/{token}.
+      location.href = res.pay_url;
+    } catch (e) {
+      this.setState({ sheet:'failed' });
+    }
+  }
+
+  async retry() {
+    const s = this.state, t = this.tpl();
+    if (!s.photos.length || !t) return this.setState({ screen:'detail', photos:[] });
+    const form = new FormData();
+    s.photos.forEach(p => form.append('photos', p.file, p.file.name));
+    this.setState({ busy:true, pct:0 });
+    try {
+      await postForm(`/api/orders/${s.order.token}/retry`, form, pct => this.setState({ pct }));
+      this.setState({ busy:false, pct:0 });
+      this.startWatch(s.order.token);
+    } catch (e) {
+      this.setState({ busy:false, pct:0, uploadError: e.message });
+    }
+  }
+
+  async refund() {
+    try {
+      const order = await post(`/api/orders/${this.state.order.token}/refund`);
+      this.setState({ order, refunded:true });
+    } catch (e) {}
+  }
+
+  vals() {
+    const s = this.state, L = T[s.lang], cur = this.tpl(), o = s.order;
+    const price = cur ? priceOf(cur, s.resolution) : null;
+
+    const slots = cur ? Array.from({ length: cur.ref_photos }, (_, i) => {
+      const p = s.photos[i];
+      return { i, has:!!p, url: p ? p.url : '',
+        title: (cur.slot_labels && cur.slot_labels[i]) || L.slotHint,
+        sub: p ? L.added : L.slotHint,
+        bg: p ? '#fff' : 'rgba(255,255,255,.5)',
+        border: p ? '1px solid rgba(23,23,26,.08)' : '1.5px dashed rgba(23,23,26,.22)',
+        pick:() => this.pick(i) };
+    }) : [];
+
+    const firstEmpty = slots.findIndex(x => !x.has);
+    const ready = slots.length > 0 && firstEmpty === -1;
+
+    let ctaLabel = L.ctaUpload, ctaPrice = '';
+    if (s.busy) ctaLabel = `${L.sending} ${Math.round(s.pct * 100)}%`;
+    else if (ready) { ctaLabel = L.ctaCreate; ctaPrice = price != null ? fmt(price) : ''; }
+    else if (firstEmpty > 0) ctaLabel = L.ctaUploadMore;
+
+    const onCta = () => {
+      if (s.busy) return;
+      if (ready) return this.submit();
+      if (firstEmpty >= 0) this.pick(firstEmpty);
+    };
+
+    const orderUrl = o ? location.host + '/o/' + o.token : '';
+
+    return {
+      t:L, cur, slots, o,
+      lang:s.lang, setLang: lang => this.setState({ lang }, () => this.loadTemplates()),
+      goHome:() => { this.stopTimers(); this.setState({ screen:'home', sheet:null, photos:[] }); window.scrollTo(0,0); },
+      isHome:s.screen === 'home', isDetail:s.screen === 'detail', isGen:s.screen === 'gen',
+      isResult:s.screen === 'result', isFail:s.screen === 'fail',
+      loading:s.loading, loadError:s.loadError, templates:s.templates,
+      reload:() => { this.setState({ loading:true, loadError:'' }); this.loadTemplates(); },
+
+      showResume: !!o && s.screen === 'home' && o.status !== 'draft',
+      resumeTitle: o ? (o.status === 'done' ? L.resumeDone
+        : (o.status === 'failed' || o.status === 'refund_requested') ? L.resumeFail : L.resumeGen) : '',
+      resumeTpl: o ? s.templates.find(t => t.id === o.template_id) : null,
+      openOrder:() => o && this.applyOrderScreen(o),
+
+      resolutions: cur ? offered(cur).map(r => ({
+        id:r, label:r, price: fmt(priceOf(cur, r)), on: r === s.resolution,
+        pick:() => this.setState({ resolution:r }),
+      })) : [],
+
+      uploadError:s.uploadError, busy:s.busy, pct:`${Math.round(s.pct * 100)}%`,
+      ctaLabel, ctaPrice, onCta, ctaOpacity: s.busy ? .55 : 1,
+      priceStr: price != null ? fmt(price) : '',
+      canRetryFree: !!o && o.can_retry && s.screen === 'detail',
+
+      sheetOpen:!!s.sheet, sheetAlign: s.isDesk ? 'center' : 'flex-end', sheetPad: s.isDesk ? '24px' : '0',
+      sheetRadius: s.isDesk ? '28px' : '28px 28px 0 0',
+      sheetAnim: s.isDesk ? 'popIn .3s ease both' : 'sheetUp .38s cubic-bezier(.2,.9,.3,1) both',
+      closeSheet:() => { if (s.sheet !== 'busy') this.setState({ sheet:null }); },
+      stop: e => e.stopPropagation(),
+      email:s.email, onEmail: e => this.setState({ email:e.target.value }),
+      payFailed:s.sheet === 'failed', payBusy:s.sheet === 'busy', pay:() => this.pay(),
+      payLabel: s.sheet === 'busy' ? L.opening : `${L.pay} ${fmt(price || 0)}`,
+
+      firstPhoto: s.photos[0] ? s.photos[0].url : '',
+      stepText: L.steps[s.step], orderUrl,
+      copyLabel: s.copied ? L.copied : L.copy,
+      copyLink:() => { try { navigator.clipboard.writeText(location.origin + '/o/' + o.token); } catch (e) {}
+        this.setState({ copied:true }); setTimeout(() => this.setState({ copied:false }), 1800); },
+
+      playState: s.playing ? 'running' : 'paused', paused:!s.playing,
+      togglePlay:() => this.setState({ playing:!s.playing }),
+      videoHref: o ? `/api/orders/${o.token}/video` : '#',
+      shareLabel: s.shared ? L.copied : L.share,
+      share:() => { const url = location.origin + '/o/' + o.token;
+        if (navigator.share) navigator.share({ url }).catch(() => {});
+        else { try { navigator.clipboard.writeText(url); } catch (e) {}
+          this.setState({ shared:true }); setTimeout(() => this.setState({ shared:false }), 1800); } },
+
+      again:() => { localStorage.removeItem(KEY); this.setState({ screen:'home', photos:[], order:null }); window.scrollTo(0,0); },
+      startRetry:() => { this.setState({ screen:'detail', photos:[], uploadError:'' }); window.scrollTo(0,0); },
+      doRetry:() => this.retry(),
+      notRefunded: !s.refunded, refunded:s.refunded, refund:() => this.refund(),
+      refundNote:L.refundNote,
+    };
+  }
+
+  home(v) {
+    return html`<div style="max-width:1200px; margin:0 auto; padding:22px 16px 40px">
+      ${v.showResume && html`
+        <button onClick=${v.openOrder} class="press" style="width:100%; margin-bottom:18px; border:0; cursor:pointer; display:flex; align-items:center; gap:12px; padding:10px 12px 10px 10px; border-radius:18px; background:#17171A; color:#fff; text-align:left; animation:fadeUp .4s ease both">
+          <div style="width:36px; height:64px; border-radius:8px; flex:none; background:#2C2C30 center/cover url(${v.resumeTpl ? v.resumeTpl.poster_url : ''})"></div>
+          <div style="flex:1; min-width:0">
+            <div style="font-size:15px; font-weight:600">${v.resumeTitle}</div>
+            <div style="font-size:13px; color:#B9B8B2; margin-top:2px">${v.resumeTpl ? v.resumeTpl.name : ''}</div>
+          </div>
+          <span style="height:36px; padding:0 14px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:14px; font-weight:600; display:flex; align-items:center">${v.t.open}</span>
+        </button>`}
+      <h1 style="margin:0; font-weight:800; font-size:clamp(30px, 7.6vw, 60px); line-height:1.08; letter-spacing:-.035em; text-wrap:balance; max-width:760px">${v.t.headline}</h1>
+      <p style="margin:12px 0 0; font-size:17px; line-height:1.45; color:#5F5E59; max-width:440px; text-wrap:pretty">${v.t.sub}</p>
+
+      ${v.loadError
+        ? html`<div style="margin-top:28px; display:flex; align-items:center; gap:12px; font-size:15px; color:#5F5E59">
+            <span>${v.t.loadErr}</span>
+            <button onClick=${v.reload} style="height:36px; padding:0 14px; border-radius:999px; border:1px solid rgba(23,23,26,.14); background:#fff; cursor:pointer; font-size:14px; font-weight:600">${v.t.retryLoad}</button>
+          </div>`
+        : html`<div style="margin-top:24px; display:grid; grid-template-columns:repeat(auto-fill, minmax(165px, 1fr)); gap:20px 12px; align-items:start">
+          ${v.loading
+            ? [1,2,3,4,5,6].map(i => html`<div key=${i}>
+                <div style="aspect-ratio:9/16; border-radius:20px; background:#E7E4DC; animation:pulse 1.4s ease-in-out infinite"></div>
+                <div style="height:14px; width:70%; margin-top:12px; border-radius:6px; background:#E7E4DC"></div>
+                <div style="height:12px; width:40%; margin-top:8px; border-radius:6px; background:#E7E4DC"></div>
+              </div>`)
+            : v.templates.map(item => html`
+              <button key=${item.id} onClick=${() => this.open(item)} class="card press" style="all:unset; cursor:pointer; display:block; animation:fadeUp .5s ease both">
+                <div class="thumb" onMouseEnter=${e => this.hoverIn(e.currentTarget)} onMouseLeave=${e => this.hoverOut(e.currentTarget)} style="position:relative; aspect-ratio:${ar(item)}; border-radius:20px; overflow:hidden; background:#E7E4DC center/cover url(${item.poster_url}); box-shadow:0 1px 0 rgba(23,23,26,.04), 0 14px 30px -18px rgba(23,23,26,.45); transition:transform .25s ease">
+                  <video data-src=${item.clip_url} muted loop playsinline preload="none"
+                    onTimeUpdate=${e => { if (e.currentTarget.currentTime > PREVIEW_LOOP_SEC) e.currentTarget.currentTime = 0; }}
+                    style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .35s"></video>
+                  <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 62%, rgba(0,0,0,.28))"></div>
+                  ${item.popular && html`<span style="position:absolute; top:10px; left:10px; height:24px; padding:0 9px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:12px; font-weight:600; display:flex; align-items:center">${v.t.popular}</span>`}
+                  <span style="position:absolute; bottom:10px; left:10px; height:22px; padding:0 8px; border-radius:999px; background:rgba(0,0,0,.35); backdrop-filter:blur(6px); color:#fff; font-size:11px; font-weight:500; display:flex; align-items:center; gap:5px"><span style="width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.6s infinite"></span>${Math.round(item.duration_sec)} ${v.t.sec}</span>
+                </div>
+                <div style="margin-top:10px; padding:0 2px">
+                  <div style="font-size:15px; font-weight:600; letter-spacing:-.01em">${item.name}</div>
+                  <div style="font-size:14px; color:#5F5E59; margin-top:2px">${offered(item).length ? fmt(Math.min(...offered(item).map(r => priceOf(item, r)))) : ''}</div>
+                </div>
+              </button>`)}
+        </div>`}
+      ${!v.loading && !v.loadError && !v.templates.length && html`<p style="margin-top:28px; font-size:15px; color:#5F5E59">${v.t.empty}</p>`}
+
+      <div style="margin-top:44px; padding-top:20px; border-top:1px solid rgba(23,23,26,.08); display:flex; flex-wrap:wrap; gap:8px 20px; justify-content:space-between; font-size:13px; color:#6B6A66">
+        <span>${v.t.trust}</span>
+        <a href="https://wa.me/77000000000" style="color:#6B6A66">${v.t.help}</a>
+      </div>
+    </div>`;
+  }
+
+  detail(v) {
+    const { cur } = v;
+    if (!cur) return null;
+    return html`<div style="max-width:960px; margin:0 auto; padding:12px 16px 0; animation:fade .3s ease both">
+      <button onClick=${v.goHome} style="border:0; background:none; cursor:pointer; padding:8px 0; margin-bottom:6px; display:flex; align-items:center; gap:6px; font-size:15px; font-weight:500; color:#5F5E59">${ICON.back}${v.t.back}</button>
+      <div style="display:flex; flex-wrap:wrap; gap:24px 48px; justify-content:center; align-items:flex-start">
+        <div style="flex:1 1 320px; max-width:420px; display:flex; justify-content:center">
+          <video src=${cur.clip_url} poster=${cur.poster_url} muted loop playsinline autoplay
+            style="width:100%; aspect-ratio:${ar(cur)}; object-fit:cover; border-radius:26px; background:#E7E4DC; box-shadow:0 30px 60px -28px rgba(23,23,26,.5)"></video>
+        </div>
+
+        <div style="flex:1 1 340px; max-width:420px; min-width:0; display:flex; flex-direction:column">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px">
+            <h1 style="margin:0; font-weight:800; font-size:26px; letter-spacing:-.03em; line-height:1.15">${cur.name}</h1>
+            <span style="font-size:20px; font-weight:700; white-space:nowrap">${v.priceStr}</span>
+          </div>
+          <p style="margin:8px 0 0; font-size:16px; line-height:1.45; color:#5F5E59; text-wrap:pretty">${cur.desc}</p>
+          <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap">
+            ${[`${cur.ref_photos} фото`, `${Math.round(cur.duration_sec)} ${v.t.sec}`, `${cur.aspect_w}:${cur.aspect_h}`].map(x =>
+              html`<span key=${x} style="height:28px; padding:0 11px; border-radius:999px; background:#ECE9E2; font-size:13px; font-weight:500; display:flex; align-items:center">${x}</span>`)}
+          </div>
+
+          ${v.resolutions.length > 1 && html`
+            <div style="margin-top:20px">
+              <div style="font-size:13px; color:#6B6A66; margin-bottom:8px">${v.t.quality}</div>
+              <div style="display:grid; grid-template-columns:repeat(${v.resolutions.length}, 1fr); gap:8px">
+                ${v.resolutions.map(r => html`
+                  <button key=${r.id} onClick=${r.pick} style="cursor:pointer; padding:10px 6px; border-radius:16px; background:${r.on ? '#17171A' : '#fff'}; color:${r.on ? '#fff' : '#17171A'}; border:1px solid ${r.on ? '#17171A' : 'rgba(23,23,26,.12)'}; transition:background .2s">
+                    <div style="font-size:15px; font-weight:600">${r.label}</div>
+                    <div style="font-size:13px; margin-top:2px; color:${r.on ? '#D2FF3A' : '#6B6A66'}">${r.price}</div>
+                  </button>`)}
+              </div>
+            </div>`}
+
+          <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px">
+            ${v.slots.map(s => html`
+              <button key=${s.i} onClick=${s.pick} class="press" style="width:100%; cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px; border-radius:20px; text-align:left; background:${s.bg}; border:${s.border}; transition:all .2s ease">
+                <div style="position:relative; width:64px; height:64px; flex:none; border-radius:14px; overflow:hidden; background:#ECE9E2 center/cover ${s.has ? `url(${s.url})` : 'none'}; display:flex; align-items:center; justify-content:center">
+                  ${!s.has && ICON.plus}
+                  ${s.has && html`<span style="position:absolute; right:4px; bottom:4px; width:20px; height:20px; border-radius:50%; background:#D2FF3A; display:flex; align-items:center; justify-content:center; animation:popIn .3s ease both">${ICON.tick}</span>`}
+                </div>
+                <div style="flex:1; min-width:0">
+                  <div style="font-size:16px; font-weight:600; color:#17171A">${s.title}</div>
+                  <div style="font-size:14px; color:#5F5E59; margin-top:3px">${s.sub}</div>
+                </div>
+                ${s.has && html`<span style="font-size:14px; font-weight:600; color:#17171A; padding:0 6px">${v.t.replace}</span>`}
+              </button>`)}
+            ${v.uploadError && html`
+              <div style="display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:16px; background:#FBEDE7; color:#8A2E12; font-size:14px; line-height:1.4; animation:fadeUp .25s ease both">${ICON.warn}<span>${v.uploadError}</span></div>`}
+            ${v.canRetryFree && html`<div style="padding:12px 14px; border-radius:16px; background:#EEF8C8; font-size:14px; line-height:1.4">${v.t.retryNote}</div>`}
+          </div>
+
+          <div style="position:sticky; bottom:0; margin-top:18px; padding:12px 0 calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(180deg, rgba(245,243,238,0), #F5F3EE 24%)">
+            <button onClick=${v.canRetryFree ? v.doRetry : v.onCta} class="press" style="position:relative; overflow:hidden; width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600; letter-spacing:-.01em; display:flex; align-items:center; justify-content:center; gap:8px; opacity:${v.ctaOpacity}; transition:transform .15s, opacity .2s; box-shadow:0 14px 28px -14px rgba(23,23,26,.6)">
+              ${v.busy && html`<span style="position:absolute; left:0; top:0; bottom:0; width:${v.pct}; background:rgba(210,255,58,.18); transition:width .15s linear"></span>`}
+              <span style="position:relative">${v.canRetryFree ? v.t.ctaRetry : v.ctaLabel}</span>
+              <span style="position:relative; color:#D2FF3A">${v.canRetryFree ? '' : v.ctaPrice}</span>
+            </button>
+            <div style="margin-top:10px; text-align:center; font-size:13px; color:#6B6A66">${v.t.trust}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  gen(v) {
+    const cur = v.cur;
+    return html`<div style="max-width:460px; margin:0 auto; padding:28px 16px 48px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:fade .4s ease both">
+      <div style="position:relative; width:100%; max-width:340px; aspect-ratio:${cur ? ar(cur) : '9/16'}; border-radius:26px; overflow:hidden; background:#E7E4DC center/cover url(${cur ? cur.poster_url : ''}); animation:breathe 2.6s ease-in-out infinite">
+        <div style="position:absolute; inset:0; background:rgba(23,23,26,.28); backdrop-filter:blur(6px)"></div>
+        <div style="position:absolute; left:0; right:0; height:35%; background:linear-gradient(180deg, rgba(210,255,58,0), rgba(210,255,58,.45), rgba(210,255,58,0)); animation:scan 2.4s cubic-bezier(.5,0,.5,1) infinite"></div>
+        ${v.firstPhoto && html`<div style="position:absolute; left:50%; top:50%; width:72px; height:72px; margin:-36px 0 0 -36px; border-radius:50%; background:center/cover url(${v.firstPhoto}); border:3px solid #fff; box-shadow:0 8px 20px rgba(0,0,0,.3)"></div>`}
+      </div>
+      <h1 style="margin:28px 0 0; font-weight:800; font-size:24px; letter-spacing:-.03em">${v.t.genTitle}</h1>
+      <div style="margin-top:10px; height:22px; font-size:15px; font-weight:500; display:flex; align-items:center; gap:8px">
+        <span style="width:7px; height:7px; border-radius:50%; background:#17171A; animation:pulse 1s infinite"></span><span>${v.stepText}</span>
+      </div>
+      <div style="position:relative; margin-top:16px; width:180px; height:4px; border-radius:4px; background:#E4E1D9; overflow:hidden">
+        <div style="position:absolute; top:0; bottom:0; width:40%; border-radius:4px; background:#17171A; animation:slide 1.4s ease-in-out infinite"></div>
+      </div>
+      <p style="margin:18px 0 0; font-size:15px; line-height:1.45; color:#5F5E59; max-width:300px; text-wrap:balance">${v.t.genNote} · ${v.t.usually}</p>
+
+      <div style="margin-top:24px; width:100%; padding:14px 14px 14px 16px; border-radius:20px; background:#fff; border:1px solid rgba(23,23,26,.07); display:flex; align-items:center; gap:12px; text-align:left">
+        <div style="flex:1; min-width:0">
+          <div style="font-size:13px; color:#6B6A66">${v.t.orderLink}</div>
+          <div style="font-size:15px; font-weight:600; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${v.orderUrl}</div>
+        </div>
+        <button onClick=${v.copyLink} style="height:40px; padding:0 14px; border-radius:12px; border:0; cursor:pointer; background:#ECE9E2; font-size:14px; font-weight:600; white-space:nowrap">${v.copyLabel}</button>
+      </div>
+    </div>`;
+  }
+
+  result(v) {
+    const cur = v.cur;
+    return html`<div style="max-width:460px; margin:0 auto; padding:20px 16px 40px; display:flex; flex-direction:column; align-items:center; animation:fade .4s ease both">
+      <div style="display:flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:999px; background:#D2FF3A; font-size:14px; font-weight:600; animation:popIn .4s ease both">${ICON.checkAnim}${v.t.ready}</div>
+      <video src=${v.videoHref} poster=${cur ? cur.poster_url : ''} controls playsinline autoplay muted loop
+        style="width:100%; max-width:340px; margin-top:16px; aspect-ratio:${cur ? ar(cur) : '9/16'}; object-fit:cover; border-radius:26px; background:#E7E4DC; box-shadow:0 34px 70px -30px rgba(23,23,26,.6); animation:popIn .6s .1s ease both"></video>
+
+      <div style="width:100%; margin-top:22px; display:flex; flex-direction:column; gap:10px">
+        <a href=${v.videoHref} download class="press" style="width:100%; height:58px; border-radius:18px; background:#17171A; color:#fff; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none; box-shadow:0 14px 28px -14px rgba(23,23,26,.6)">
+          ${ICON.download}<span>${v.t.download}</span>
+        </a>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+          <button onClick=${v.share} style="height:52px; border-radius:16px; cursor:pointer; background:#fff; border:1px solid rgba(23,23,26,.1); font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px">${ICON.share}${v.shareLabel}</button>
+          <button onClick=${v.again} style="height:52px; border-radius:16px; cursor:pointer; background:#fff; border:1px solid rgba(23,23,26,.1); font-size:15px; font-weight:600">${v.t.more}</button>
+        </div>
+        <div style="margin-top:6px; text-align:center; font-size:13px; color:#6B6A66">${v.t.keep}</div>
+      </div>
+    </div>`;
+  }
+
+  fail(v) {
+    return html`<div style="max-width:420px; margin:0 auto; padding:36px 16px 48px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:fade .4s ease both">
+      <div style="width:56px; height:56px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 30px -12px rgba(23,23,26,.4)">${ICON.face}</div>
+      <h1 style="margin:22px 0 0; font-weight:800; font-size:23px; letter-spacing:-.03em; text-wrap:balance">${v.t.failTitle}</h1>
+      <p style="margin:10px 0 0; font-size:15px; line-height:1.5; color:#5F5E59; text-wrap:pretty">${v.t.failText}</p>
+      <div style="width:100%; margin-top:24px; display:flex; flex-direction:column; gap:10px">
+        ${v.o && v.o.can_retry && html`<button onClick=${v.startRetry} class="press" style="width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600">${v.t.retry}</button>`}
+        ${v.notRefunded && v.o && v.o.can_refund && html`<button onClick=${v.refund} style="width:100%; height:52px; border-radius:16px; cursor:pointer; background:transparent; border:1px solid rgba(23,23,26,.12); font-size:15px; font-weight:600">${v.t.refund}</button>`}
+        ${v.refunded && html`<div style="padding:14px; border-radius:16px; background:#fff; border:1px solid rgba(23,23,26,.07); font-size:14px; line-height:1.45; animation:fadeUp .25s ease both">${v.refundNote}</div>`}
+      </div>
+    </div>`;
+  }
+
+  sheet(v) {
+    const { cur } = v;
+    return html`<div onClick=${v.closeSheet} style="position:fixed; inset:0; z-index:50; background:rgba(23,23,26,.42); backdrop-filter:blur(3px); display:flex; justify-content:center; align-items:${v.sheetAlign}; padding:${v.sheetPad}; animation:fade .2s ease both">
+      <div onClick=${v.stop} style="width:100%; max-width:440px; background:#FBFAF7; border-radius:${v.sheetRadius}; padding:10px 18px calc(20px + env(safe-area-inset-bottom)); box-shadow:0 -10px 40px rgba(23,23,26,.2); animation:${v.sheetAnim}">
+        <div style="width:40px; height:5px; border-radius:5px; background:#DAD7CF; margin:0 auto 12px"></div>
+        <div style="display:flex; align-items:center; justify-content:space-between">
+          <span style="font-size:18px; font-weight:700">${v.t.payTitle}</span>
+          <button onClick=${v.closeSheet} aria-label="Закрыть" style="width:36px; height:36px; border-radius:50%; border:0; background:#ECE9E2; cursor:pointer; display:flex; align-items:center; justify-content:center">${ICON.close}</button>
+        </div>
+
+        <div style="margin-top:14px; display:flex; align-items:center; gap:14px; padding:12px; border-radius:18px; background:#fff; border:1px solid rgba(23,23,26,.07)">
+          <div style="width:44px; height:60px; border-radius:10px; flex:none; background:#E7E4DC center/cover url(${cur ? cur.poster_url : ''})"></div>
+          <div style="flex:1; min-width:0">
+            <div style="font-size:16px; font-weight:600">${cur ? cur.name : ''}</div>
+            <div style="font-size:13px; color:#6B6A66; margin-top:3px">${cur ? cur.ref_photos : 0} фото · ${v.o ? v.o.resolution : ''}</div>
+          </div>
+          ${v.firstPhoto && html`<div style="width:40px; height:40px; flex:none; border-radius:50%; background:center/cover url(${v.firstPhoto}); border:2px solid #fff; box-shadow:0 0 0 1px rgba(23,23,26,.1)"></div>`}
+        </div>
+
+        <div style="margin-top:18px; display:flex; align-items:flex-end; justify-content:space-between">
+          <div>
+            <div style="font-size:14px; color:#6B6A66">${v.t.total}</div>
+            <div style="font-size:13px; color:#6B6A66; margin-top:2px">${v.t.oneTime}</div>
+          </div>
+          <div style="font-size:28px; font-weight:700; letter-spacing:-.03em">${v.o ? fmt(v.o.amount_kzt) : v.priceStr}</div>
+        </div>
+
+        <label style="display:block; margin-top:16px">
+          <div style="font-size:13px; color:#6B6A66; margin-bottom:6px">${v.t.emailLabel} <span style="color:#9A9993">· ${v.t.optional}</span></div>
+          <input type="email" value=${v.email} onInput=${v.onEmail} placeholder="name@mail.kz" style="width:100%; height:50px; padding:0 14px; border-radius:14px; border:1px solid rgba(23,23,26,.12); background:#fff; font-size:16px; outline:none" />
+        </label>
+
+        ${v.payFailed && html`<div style="margin-top:12px; padding:12px 14px; border-radius:14px; background:#FBEDE7; color:#8A2E12; font-size:14px; line-height:1.4; animation:fadeUp .25s ease both">${v.t.payFail}</div>`}
+
+        <button onClick=${v.pay} class="press" style="margin-top:16px; width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
+          ${v.payBusy && spinner('rgba(255,255,255,.3)', '#fff')}
+          <span style="width:18px; height:18px; border-radius:6px; background:#E3262B"></span>
+          <span>${v.payLabel}</span>
+        </button>
+        <div style="margin-top:10px; text-align:center; font-size:12px; color:#6B6A66; display:flex; align-items:center; justify-content:center; gap:6px">${ICON.lock}${v.t.afterPay}</div>
+      </div>
+    </div>`;
+  }
+
+  render() {
+    const v = this.vals();
+    return html`<div style="min-height:100vh; font-family:'Golos Text', system-ui, sans-serif; background:#F5F3EE; color:#17171A; display:flex; flex-direction:column">
+      <input type="file" accept="image/*,.heic,.heif" ref=${this.fileRef} onChange=${e => this.onFile(e)} style="display:none" />
+
+      <header style="position:sticky; top:0; z-index:20; background:rgba(245,243,238,.86); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid rgba(23,23,26,.06)">
+        <div style="max-width:1200px; margin:0 auto; height:60px; padding:0 16px; display:flex; align-items:center; justify-content:space-between">
+          <button onClick=${v.goHome} style="all:unset; cursor:pointer; display:flex; align-items:center; gap:6px; font-family:'Unbounded', sans-serif; font-weight:700; font-size:19px; letter-spacing:-.02em">qaitala<span style="width:7px; height:7px; border-radius:50%; background:#D2FF3A; box-shadow:0 0 0 1.5px #17171A; margin-top:6px"></span><span style="font-weight:600; color:#6B6A66">kz</span></button>
+          <div style="display:flex; gap:2px; padding:3px; border-radius:999px; background:#ECE9E2">
+            ${[['ru','RU'],['kz','ҚАЗ']].map(([id, label]) => html`
+              <button key=${id} onClick=${() => v.setLang(id)} style="border:0; cursor:pointer; height:30px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; background:${v.lang === id ? '#17171A' : 'transparent'}; color:${v.lang === id ? '#fff' : '#5F5E59'}; transition:background .2s">${label}</button>`)}
+          </div>
+        </div>
+      </header>
+
+      <main style="flex:1; width:100%">
+        ${v.isHome && this.home(v)}
+        ${v.isDetail && this.detail(v)}
+        ${v.isGen && this.gen(v)}
+        ${v.isResult && this.result(v)}
+        ${v.isFail && this.fail(v)}
+      </main>
+
+      ${v.sheetOpen && this.sheet(v)}
+    </div>`;
+  }
+}
+
+render(html`<${App} />`, document.getElementById('app'));
+</script>
+</body>
+</html>

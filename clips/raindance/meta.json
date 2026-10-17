@@ -1,0 +1,19 @@
+{
+  "name": "Rain Dance",
+  "desc_ru": "Двое у моря на закате. Мужчина и женщина.",
+  "desc_kz": "Батар күнде теңіз жағасында екеу. Ер мен әйел.",
+  "slot_labels_ru": [
+    "Мужчина",
+    "Женщина"
+  ],
+  "slot_labels_kz": [
+    "Ер адам",
+    "Әйел адам"
+  ],
+  "poster_at": null,
+  "price_480p": null,
+  "price_720p": null,
+  "price_1080p": null,
+  "popular": false,
+  "sort": 5
+}

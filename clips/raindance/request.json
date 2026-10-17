@@ -1,0 +1,5 @@
+{
+  "prompt": "Replace the man with the person in reference photo 1 and the woman with the person in reference photo 2. Take each person's face, skin, head shape, hairstyle, neck, body shape and proportions from their own reference photo.\n\nFollow the outfit instructions below. By default, copy clothing and accessories from the corresponding reference photo. If a written outfit is specified, use it instead, fitted naturally to that person's reference body. An outfit change must not change their identity, hairstyle or body proportions.\n\nThe photos define the people; the video defines motion. Keep both characters and their outfits consistent in every shot and angle, including rear views. Preserve the video's scene, camera, actions, timing and audio.\n\nMan outfit: use reference photo 1.\nWoman outfit: use reference photo 2.",
+  "image_1": "",
+  "image_2": ""
+}

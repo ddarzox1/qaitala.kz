@@ -1,0 +1,17 @@
+{
+  "name": "Enzo",
+  "desc_ru": "Празднование гола на стадионе — крупный план.",
+  "desc_kz": "Стадиондағы гол қуанышы — жақын план.",
+  "slot_labels_ru": [
+    "Твоё фото"
+  ],
+  "slot_labels_kz": [
+    "Сенің фотоң"
+  ],
+  "poster_at": null,
+  "price_480p": null,
+  "price_720p": null,
+  "price_1080p": null,
+  "popular": false,
+  "sort": 2
+}

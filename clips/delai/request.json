@@ -1,0 +1,6 @@
+{
+  "prompt": "Use the uploaded video as the strict reference for the complete action, timing, dance movements, gestures, camera movement, framing, location, cars and sequence of events. Replace the first person with the character from <<<image_1>>> , the person filming in selfie mode with the character from <<<image_2>>> , and the person appearing between the cars with the character from <<<image_3>>> .\n\nPreserve the recognizable face, hairstyle and identity of each character throughout the entire video. Each image controls only its assigned person. Do not mix or swap identities.",
+  "image_1": "",
+  "image_2": "",
+  "image_3": ""
+}

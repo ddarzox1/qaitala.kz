@@ -1,0 +1,16 @@
+# Локальное окружение для прогона: Postgres и S3-совместимый SeaweedFS.
+# Боевой стек — в docker-compose.yml.
+name: qaitala-dev
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: qaitala
+      POSTGRES_PASSWORD: qaitala
+      POSTGRES_DB: qaitala
+    ports: ["5434:5432"]
+
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    command: server -dir=/data -s3 -s3.port=8333 -ip=0.0.0.0
+    ports: ["8333:8333"]
