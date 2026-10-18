@@ -40,7 +40,21 @@ input:focus{border-color:#17171A}
 const { h, Component, render, createRef } = preact;
 const html = htm.bind(h);
 
-const KEY = 'qait-order-v1';
+// Токены заказов этого браузера, новые первыми. Сам заказ живёт по ссылке /o/{token}.
+const KEY = 'qait-orders-v1', OLD_KEY = 'qait-order-v1', MAX_SAVED = 10;
+function savedTokens() {
+  try {
+    const list = JSON.parse(localStorage.getItem(KEY) || '[]');
+    const old = localStorage.getItem(OLD_KEY);
+    return old && !list.includes(old) ? [old, ...list] : list;
+  } catch (e) { return []; }
+}
+function writeTokens(list) {
+  try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX_SAVED))); localStorage.removeItem(OLD_KEY); } catch (e) {}
+}
+const saveToken = t => writeTokens([t, ...savedTokens().filter(x => x !== t)]);
+const dropToken = t => writeTokens(savedTokens().filter(x => x !== t));
+const LISTED = ['paid', 'generating', 'done', 'failed', 'refund_requested'];
 const fmt = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₸';
 const RES = ['480p', '720p', '1080p'];
 
@@ -52,7 +66,7 @@ const T = {
     uploadErr:'Это не похоже на фото. Подойдёт JPG, PNG или HEIC.', retryNote:'Повтор бесплатный — оплата уже засчитана.',
     ctaUpload:'Загрузить фото', ctaUploadMore:'Загрузить ещё фото', ctaCreate:'Создать за', ctaRetry:'Создать заново · бесплатно', sending:'Загружаем',
     payTitle:'Оплата', total:'К оплате', oneTime:'Разовый платёж, без подписки', emailLabel:'Email для ссылки на видео', optional:'необязательно',
-    pay:'Оплатить', opening:'Открываем Kaspi', payFail:'Не получилось начать оплату. Попробуй ещё раз.', afterPay:'Начнём создавать видео сразу после оплаты',
+    pay:'Оплатить', opening:'Открываем Kaspi', payFail:'Не получилось начать оплату. Попробуй ещё раз.', afterPay:'Начнём создавать видео сразу после оплаты', waitPay:'Ждём оплату в Kaspi', reopen:'Открыть Kaspi ещё раз',
     genTitle:'Создаём твоё видео', genNote:'Можешь оставить страницу открытой или вернуться позже', usually:'обычно 2–3 минуты', steps:['Изучаем фото','Ставим свет','Собираем кадры','Добавляем движение','Финальные штрихи'],
     orderLink:'Ссылка на твой заказ', copy:'Копировать', copied:'Скопировано',
     ready:'Готово', download:'Скачать видео', share:'Поделиться', more:'Создать ещё', keep:'Видео доступно по ссылке 30 дней',
@@ -64,7 +78,7 @@ const T = {
     uploadErr:'Бұл фото емес сияқты. JPG, PNG немесе HEIC келеді.', retryNote:'Қайталау тегін — төлем есептелді.',
     ctaUpload:'Фото жүктеу', ctaUploadMore:'Тағы фото жүктеу', ctaCreate:'Жасау ·', ctaRetry:'Қайта жасау · тегін', sending:'Жүктеп жатырмыз',
     payTitle:'Төлем', total:'Төленетін сома', oneTime:'Бір реттік төлем, жазылымсыз', emailLabel:'Видео сілтемесі үшін email', optional:'міндетті емес',
-    pay:'Төлеу', opening:'Kaspi ашылуда', payFail:'Төлемді бастау мүмкін болмады. Қайта көр.', afterPay:'Видеоны төлемнен кейін бірден жасай бастаймыз',
+    pay:'Төлеу', opening:'Kaspi ашылуда', payFail:'Төлемді бастау мүмкін болмады. Қайта көр.', afterPay:'Видеоны төлемнен кейін бірден жасай бастаймыз', waitPay:'Kaspi-дегі төлемді күтіп жатырмыз', reopen:'Kaspi-ді қайта ашу',
     genTitle:'Видеоңды жасап жатырмыз', genNote:'Бетті ашық қалдыруға немесе кейін оралуға болады', usually:'әдетте 2–3 минут', steps:['Фотоны зерттеп жатырмыз','Жарық қойып жатырмыз','Кадрларды жинап жатырмыз','Қозғалыс қосып жатырмыз','Соңғы штрихтар'],
     orderLink:'Тапсырысыңның сілтемесі', copy:'Көшіру', copied:'Көшірілді',
     ready:'Дайын', download:'Видеоны жүктеу', share:'Бөлісу', more:'Тағы жасау', keep:'Видео сілтеме арқылы 30 күн қолжетімді',
@@ -155,7 +169,7 @@ class App extends Component {
   state = {
     screen:'home', tplId:'', lang:'ru', resolution:'', photos:[], uploadError:'',
     sheet:null, email:'', step:0, copied:false, playing:true, shared:false, isDesk:false,
-    loading:true, loadError:'', templates:[], order:null, pct:0, busy:false, refunded:false,
+    loading:true, loadError:'', templates:[], order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false,
   };
 
   componentDidMount() {
@@ -163,10 +177,9 @@ class App extends Component {
     this.onResize(); window.addEventListener('resize', this.onResize);
     this.loadTemplates();
 
-    // Заказ живёт по секретной ссылке /o/{token}; localStorage — лишь подсказка,
-    // какой заказ был последним у этого браузера.
-    const token = tokenFromPath() || localStorage.getItem(KEY) || '';
-    if (token) this.loadOrder(token, !!tokenFromPath());
+    const token = tokenFromPath();
+    if (token) { saveToken(token); this.loadOrder(token); }
+    this.loadOrders();
   }
   componentDidUpdate(_, prev) {
     const st = this.state;
@@ -234,14 +247,24 @@ class App extends Component {
     }
   }
 
-  async loadOrder(token, navigate) {
+  async loadOrder(token) {
     try {
-      const order = await get('/api/orders/' + token);
-      this.setState({ order, tplId: order.template_id, resolution: order.resolution });
-      if (navigate) this.applyOrderScreen(order);
+      this.showOrder(await get('/api/orders/' + token));
     } catch (e) {
-      localStorage.removeItem(KEY); // заказ протух или токен чужой
+      dropToken(token); // заказ протух или токен чужой
     }
+  }
+
+  // Все заказы браузера — для ленты «Мои видео» на главной.
+  async loadOrders() {
+    const all = await Promise.all(savedTokens().map(t =>
+      get('/api/orders/' + t).catch(() => null))); // сеть моргнула — токен не теряем
+    this.setState({ orders: all.filter(o => o && LISTED.includes(o.status)) });
+  }
+
+  showOrder(order) {
+    this.setState({ order, tplId: order.template_id, resolution: order.resolution });
+    this.applyOrderScreen(order);
   }
 
   applyOrderScreen(order) {
@@ -303,7 +326,7 @@ class App extends Component {
     this.setState({ busy:true, pct:0, uploadError:'' });
     try {
       const order = await postForm('/api/orders', form, pct => this.setState({ pct }));
-      localStorage.setItem(KEY, order.token);
+      saveToken(order.token);
       this.setState({ order, busy:false, pct:0, sheet:'open' });
     } catch (e) {
       this.setState({ busy:false, pct:0, uploadError: e.message });
@@ -312,16 +335,36 @@ class App extends Component {
 
   async pay() {
     const s = this.state;
-    if (s.sheet === 'busy' || !s.order) return;
+    if (s.sheet === 'busy' || s.sheet === 'wait' || !s.order) return;
+    // Вкладку открываем синхронно в клике: открытую после await браузер примет за попап.
+    const w = window.open('', '_blank');
+    if (w) w.opener = null;
     this.setState({ sheet:'busy' });
     try {
       const res = await post(`/api/orders/${s.order.token}/pay`, { email: s.email });
-      // Переход в Kaspi: на телефоне это deeplink в приложение, на десктопе —
-      // страница оплаты. Возврат произойдёт на /o/{token}.
-      location.href = res.pay_url;
+      // Kaspi: на телефоне это deeplink в приложение, на десктопе — страница оплаты.
+      if (!w) { location.href = res.pay_url; return; } // попап заблокирован — уходим сами
+      w.location.href = res.pay_url;
+      this.waitPay(s.order.token, res.pay_url);
     } catch (e) {
+      if (w) w.close();
       this.setState({ sheet:'failed' });
     }
+  }
+
+  // Эта вкладка остаётся на сайте и сама замечает оплату (её подтверждает вебхук).
+  waitPay(token, payUrl) {
+    this.stopTimers();
+    this.setState({ sheet:'wait', payUrl });
+    this.pollI = setInterval(async () => {
+      try {
+        const order = await get('/api/orders/' + token);
+        if (order.status === 'awaiting_payment') return;
+        this.stopTimers();
+        this.setState({ order, sheet: order.status === 'expired' ? 'failed' : null });
+        if (order.status !== 'expired') this.applyOrderScreen(order);
+      } catch (e) {}
+    }, 3000);
   }
 
   async retry() {
@@ -379,17 +422,17 @@ class App extends Component {
     return {
       t:L, cur, slots, o,
       lang:s.lang, setLang: lang => this.setState({ lang }, () => this.loadTemplates()),
-      goHome:() => { this.stopTimers(); this.setState({ screen:'home', sheet:null, photos:[] }); window.scrollTo(0,0); },
+      goHome:() => { this.stopTimers(); this.setState({ screen:'home', sheet:null, photos:[] }); this.loadOrders(); window.scrollTo(0,0); },
       isHome:s.screen === 'home', isDetail:s.screen === 'detail', isGen:s.screen === 'gen',
       isResult:s.screen === 'result', isFail:s.screen === 'fail',
       loading:s.loading, loadError:s.loadError, templates:s.templates,
       reload:() => { this.setState({ loading:true, loadError:'' }); this.loadTemplates(); },
 
-      showResume: !!o && s.screen === 'home' && o.status !== 'draft',
-      resumeTitle: o ? (o.status === 'done' ? L.resumeDone
-        : (o.status === 'failed' || o.status === 'refund_requested') ? L.resumeFail : L.resumeGen) : '',
-      resumeTpl: o ? s.templates.find(t => t.id === o.template_id) : null,
-      openOrder:() => o && this.applyOrderScreen(o),
+      myOrders: s.orders.map(x => ({ token:x.token,
+        title: x.status === 'done' ? L.resumeDone
+          : (x.status === 'failed' || x.status === 'refund_requested') ? L.resumeFail : L.resumeGen,
+        tpl: s.templates.find(t => t.id === x.template_id),
+        open:() => this.showOrder(x) })),
 
       resolutions: cur ? offered(cur).map(r => ({
         id:r, label:r, price: fmt(priceOf(cur, r)), on: r === s.resolution,
@@ -404,10 +447,10 @@ class App extends Component {
       sheetOpen:!!s.sheet, sheetAlign: s.isDesk ? 'center' : 'flex-end', sheetPad: s.isDesk ? '24px' : '0',
       sheetRadius: s.isDesk ? '28px' : '28px 28px 0 0',
       sheetAnim: s.isDesk ? 'popIn .3s ease both' : 'sheetUp .38s cubic-bezier(.2,.9,.3,1) both',
-      closeSheet:() => { if (s.sheet !== 'busy') this.setState({ sheet:null }); },
+      closeSheet:() => { if (s.sheet === 'busy') return; if (s.sheet === 'wait') this.stopTimers(); this.setState({ sheet:null }); },
       stop: e => e.stopPropagation(),
       email:s.email, onEmail: e => this.setState({ email:e.target.value }),
-      payFailed:s.sheet === 'failed', payBusy:s.sheet === 'busy', pay:() => this.pay(),
+      payFailed:s.sheet === 'failed', payBusy:s.sheet === 'busy', payWait:s.sheet === 'wait', payUrl:s.payUrl, pay:() => this.pay(),
       payLabel: s.sheet === 'busy' ? L.opening : `${L.pay} ${fmt(price || 0)}`,
 
       firstPhoto: s.photos[0] ? s.photos[0].url : '',
@@ -425,7 +468,7 @@ class App extends Component {
         else { try { navigator.clipboard.writeText(url); } catch (e) {}
           this.setState({ shared:true }); setTimeout(() => this.setState({ shared:false }), 1800); } },
 
-      again:() => { localStorage.removeItem(KEY); this.setState({ screen:'home', photos:[], order:null }); window.scrollTo(0,0); },
+      again:() => { this.setState({ screen:'home', photos:[], order:null }); this.loadOrders(); window.scrollTo(0,0); },
       startRetry:() => { this.setState({ screen:'detail', photos:[], uploadError:'' }); window.scrollTo(0,0); },
       doRetry:() => this.retry(),
       notRefunded: !s.refunded, refunded:s.refunded, refund:() => this.refund(),
@@ -435,15 +478,18 @@ class App extends Component {
 
   home(v) {
     return html`<div style="max-width:1200px; margin:0 auto; padding:22px 16px 40px">
-      ${v.showResume && html`
-        <button onClick=${v.openOrder} class="press" style="width:100%; margin-bottom:18px; border:0; cursor:pointer; display:flex; align-items:center; gap:12px; padding:10px 12px 10px 10px; border-radius:18px; background:#17171A; color:#fff; text-align:left; animation:fadeUp .4s ease both">
-          <div style="width:36px; height:64px; border-radius:8px; flex:none; background:#2C2C30 center/cover url(${v.resumeTpl ? v.resumeTpl.poster_url : ''})"></div>
-          <div style="flex:1; min-width:0">
-            <div style="font-size:15px; font-weight:600">${v.resumeTitle}</div>
-            <div style="font-size:13px; color:#B9B8B2; margin-top:2px">${v.resumeTpl ? v.resumeTpl.name : ''}</div>
-          </div>
-          <span style="height:36px; padding:0 14px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:14px; font-weight:600; display:flex; align-items:center">${v.t.open}</span>
-        </button>`}
+      ${v.myOrders.length > 0 && html`
+        <div style="display:flex; gap:10px; overflow-x:auto; margin:0 -16px 18px; padding:0 16px; scroll-snap-type:x mandatory; scrollbar-width:none">
+          ${v.myOrders.map(m => html`
+            <button key=${m.token} onClick=${m.open} class="press" style="flex:${v.myOrders.length > 1 ? '0 0 min(300px, 82%)' : '1 0 100%'}; scroll-snap-align:start; border:0; cursor:pointer; display:flex; align-items:center; gap:12px; padding:10px 12px 10px 10px; border-radius:18px; background:#17171A; color:#fff; text-align:left; animation:fadeUp .4s ease both">
+              <div style="width:36px; height:64px; border-radius:8px; flex:none; background:#2C2C30 center/cover url(${m.tpl ? m.tpl.poster_url : ''})"></div>
+              <div style="flex:1; min-width:0">
+                <div style="font-size:15px; font-weight:600">${m.title}</div>
+                <div style="font-size:13px; color:#B9B8B2; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${m.tpl ? m.tpl.name : ''}</div>
+              </div>
+              <span style="height:36px; padding:0 14px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:14px; font-weight:600; display:flex; align-items:center">${v.t.open}</span>
+            </button>`)}
+        </div>`}
       <h1 style="margin:0; font-weight:800; font-size:clamp(30px, 7.6vw, 60px); line-height:1.08; letter-spacing:-.035em; text-wrap:balance; max-width:760px">${v.t.headline}</h1>
       <p style="margin:12px 0 0; font-size:17px; line-height:1.45; color:#5F5E59; max-width:440px; text-wrap:pretty">${v.t.sub}</p>
 
@@ -643,11 +689,16 @@ class App extends Component {
 
         ${v.payFailed && html`<div style="margin-top:12px; padding:12px 14px; border-radius:14px; background:#FBEDE7; color:#8A2E12; font-size:14px; line-height:1.4; animation:fadeUp .25s ease both">${v.t.payFail}</div>`}
 
+        ${v.payWait ? html`
+          <div style="margin-top:16px; width:100%; height:58px; border-radius:18px; background:#ECE9E2; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
+            ${spinner('rgba(23,23,26,.2)', '#17171A')}<span>${v.t.waitPay}</span>
+          </div>
+          <a href=${v.payUrl} target="_blank" rel="noopener" style="display:block; margin-top:10px; text-align:center; font-size:14px; font-weight:600; color:#17171A">${v.t.reopen}</a>` : html`
         <button onClick=${v.pay} class="press" style="margin-top:16px; width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
           ${v.payBusy && spinner('rgba(255,255,255,.3)', '#fff')}
           <span style="width:18px; height:18px; border-radius:6px; background:#E3262B"></span>
           <span>${v.payLabel}</span>
-        </button>
+        </button>`}
         <div style="margin-top:10px; text-align:center; font-size:12px; color:#6B6A66; display:flex; align-items:center; justify-content:center; gap:6px">${ICON.lock}${v.t.afterPay}</div>
       </div>
     </div>`;

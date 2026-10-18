@@ -132,6 +132,10 @@ func (c *Client) CreateQR(ctx context.Context, amountKZT int) (*QR, error) {
 	if env.Data.QrOperationID == 0 || env.Data.QrToken == "" {
 		return nil, fmt.Errorf("kaspi qr/create: пустой ответ, StatusCode=%d", env.StatusCode)
 	}
+	// Сумму сверяем здесь: ответ qr/status её не содержит, а в QR она зашита.
+	if env.Data.Amount != amountKZT {
+		return nil, fmt.Errorf("kaspi qr/create: сумма %d вместо %d", env.Data.Amount, amountKZT)
+	}
 	qr := &QR{
 		OperationID: env.Data.QrOperationID,
 		PayURL:      env.Data.QrToken,
@@ -143,15 +147,16 @@ func (c *Client) CreateQR(ctx context.Context, amountKZT int) (*QR, error) {
 }
 
 // QRStatus — независимая проверка платежа. Вызывается после вебхука: верить
-// одному лишь уведомлению на денежном пути нельзя.
-func (c *Client) QRStatus(ctx context.Context, operationID int64) (status string, amount int, err error) {
+// одному лишь уведомлению на денежном пути нельзя. Суммы в ответе Kaspi нет —
+// она проверена при создании QR.
+func (c *Client) QRStatus(ctx context.Context, operationID int64) (string, error) {
 	var env qrEnvelope
-	err = c.do(ctx, http.MethodGet,
+	err := c.do(ctx, http.MethodGet,
 		"/api/qr/status?qrOperationId="+strconv.FormatInt(operationID, 10), nil, &env)
 	if err != nil {
-		return "", 0, err
+		return "", err
 	}
-	return env.Data.Status, env.Data.Amount, nil
+	return env.Data.Status, nil
 }
 
 // Webhook — тело уведомления от kaspi-pos-automation.

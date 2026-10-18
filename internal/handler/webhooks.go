@@ -51,15 +51,12 @@ func (h *Handler) KaspiWebhook(c echo.Context) error {
 		return c.NoContent(http.StatusOK)
 	}
 
-	status, amount, err := h.kaspi.QRStatus(ctx, qrID)
+	// Сумма зашита в QR и сверена при создании, заказ найден по нашему
+	// QrOperationId — подтверждения статуса достаточно.
+	status, err := h.kaspi.QRStatus(ctx, qrID)
 	if err != nil {
 		// 5xx — Kaspi повторит доставку, так что заказ не потеряется.
 		return h.oops(c, err, "вебхук Kaspi: перепроверка статуса")
-	}
-	if amount != order.AmountKZT {
-		h.log.Error("СУММА НЕ СОВПАЛА, генерация не запущена",
-			"token", order.Token, "ждали", order.AmountKZT, "пришло", amount)
-		return c.NoContent(http.StatusOK)
 	}
 	if status != kaspi.StatusProcessed {
 		h.log.Warn("платёж не подтверждён Kaspi", "qr_operation_id", qrID, "status", status)
@@ -72,7 +69,7 @@ func (h *Handler) KaspiWebhook(c echo.Context) error {
 		return h.oops(c, err, "вебхук Kaspi: отметка оплаты")
 	}
 	if ok {
-		h.log.Info("заказ оплачен", "token", order.Token, "сумма", amount)
+		h.log.Info("заказ оплачен", "token", order.Token, "сумма", order.AmountKZT)
 	}
 	return c.NoContent(http.StatusOK)
 }
