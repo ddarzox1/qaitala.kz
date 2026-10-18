@@ -6,7 +6,7 @@ services:
     environment:
       DATABASE_URL: postgres://qaitala:${POSTGRES_PASSWORD}@postgres:5432/qaitala?sslmode=disable
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
-      KASPI_BASE_URL: http://kaspi:3000
+      KASPI_BASE_URL: ${KASPI_BASE_URL:-http://kaspi:3000}
       KASPI_TOKEN_SN: ${KASPI_TOKEN_SN}
       KASPI_VTOKEN_SECRET: ${KASPI_VTOKEN_SECRET}
       KASPI_PROFILE_ID: ${KASPI_PROFILE_ID}
@@ -40,8 +40,6 @@ services:
     # Его демо-интерфейс в интернет смотреть не должен.
     expose:
       - "3000"
-    ports: 
-      - "3000:3000"
 
   postgres:
     image: postgres:17-alpine
