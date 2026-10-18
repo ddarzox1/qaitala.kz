@@ -452,15 +452,15 @@ class App extends Component {
             <span>${v.t.loadErr}</span>
             <button onClick=${v.reload} style="height:36px; padding:0 14px; border-radius:999px; border:1px solid rgba(23,23,26,.14); background:#fff; cursor:pointer; font-size:14px; font-weight:600">${v.t.retryLoad}</button>
           </div>`
-        : html`<div style="margin-top:24px; display:grid; grid-template-columns:repeat(auto-fill, minmax(165px, 1fr)); gap:20px 12px; align-items:start">
+        : html`<div style="margin-top:24px; columns:165px; column-gap:12px">
           ${v.loading
-            ? [1,2,3,4,5,6].map(i => html`<div key=${i}>
+            ? [1,2,3,4,5,6].map(i => html`<div key=${i} style="break-inside:avoid; margin-bottom:20px">
                 <div style="aspect-ratio:9/16; border-radius:20px; background:#E7E4DC; animation:pulse 1.4s ease-in-out infinite"></div>
                 <div style="height:14px; width:70%; margin-top:12px; border-radius:6px; background:#E7E4DC"></div>
                 <div style="height:12px; width:40%; margin-top:8px; border-radius:6px; background:#E7E4DC"></div>
               </div>`)
             : v.templates.map(item => html`
-              <button key=${item.id} onClick=${() => this.open(item)} class="card press" style="all:unset; cursor:pointer; display:block; animation:fadeUp .5s ease both">
+              <button key=${item.id} onClick=${() => this.open(item)} class="card press" style="all:unset; cursor:pointer; display:block; width:100%; break-inside:avoid; margin-bottom:20px; animation:fadeUp .5s ease both">
                 <div class="thumb" onMouseEnter=${e => this.hoverIn(e.currentTarget)} onMouseLeave=${e => this.hoverOut(e.currentTarget)} style="position:relative; aspect-ratio:${ar(item)}; border-radius:20px; overflow:hidden; background:#E7E4DC center/cover url(${item.poster_url}); box-shadow:0 1px 0 rgba(23,23,26,.04), 0 14px 30px -18px rgba(23,23,26,.45); transition:transform .25s ease">
                   <video data-src=${item.clip_url} muted loop playsinline preload="none"
                     onTimeUpdate=${e => { if (e.currentTarget.currentTime > PREVIEW_LOOP_SEC) e.currentTarget.currentTime = 0; }}
