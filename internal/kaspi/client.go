@@ -63,7 +63,6 @@ type QR struct {
 	PayURL      string // QrToken — это ссылка на оплату, не картинка
 	ReceiptURL  string
 	ExpiresAt   time.Time
-	Amount      int
 }
 
 type qrEnvelope struct {
@@ -72,7 +71,6 @@ type qrEnvelope struct {
 		QrOperationID int64  `json:"QrOperationId"`
 		QrToken       string `json:"QrToken"`
 		ExpireDate    string `json:"ExpireDate"`
-		Amount        int    `json:"Amount"`
 		ReceiptURL    string `json:"ReceiptUrl"`
 		Status        string `json:"Status"`
 	} `json:"Data"`
@@ -132,23 +130,18 @@ func (c *Client) CreateQR(ctx context.Context, amountKZT int) (*QR, error) {
 	if env.Data.QrOperationID == 0 || env.Data.QrToken == "" {
 		return nil, fmt.Errorf("kaspi qr/create: пустой ответ, StatusCode=%d", env.StatusCode)
 	}
-	// Сумму сверяем здесь: ответ qr/status её не содержит, а в QR она зашита.
-	if env.Data.Amount != amountKZT {
-		return nil, fmt.Errorf("kaspi qr/create: сумма %d вместо %d", env.Data.Amount, amountKZT)
-	}
 	qr := &QR{
 		OperationID: env.Data.QrOperationID,
 		PayURL:      env.Data.QrToken,
 		ReceiptURL:  env.Data.ReceiptURL,
-		Amount:      env.Data.Amount,
 		ExpiresAt:   parseExpire(env.Data.ExpireDate, time.Now()),
 	}
 	return qr, nil
 }
 
 // QRStatus — независимая проверка платежа. Вызывается после вебхука: верить
-// одному лишь уведомлению на денежном пути нельзя. Суммы в ответе Kaspi нет —
-// она проверена при создании QR.
+// одному лишь уведомлению на денежном пути нельзя. Суммы Kaspi не возвращает
+// ни здесь, ни в qr/create; она зашита в QR, который создаём мы сами.
 func (c *Client) QRStatus(ctx context.Context, operationID int64) (string, error) {
 	var env qrEnvelope
 	err := c.do(ctx, http.MethodGet,
