@@ -91,8 +91,9 @@ func (c *Client) doJSON(ctx context.Context, method, u string, body any, hdr map
 // пригодную для image_urls. Так наш бакет остаётся приватным.
 func (c *Client) UploadImage(ctx context.Context, contentType string, data []byte) (string, error) {
 	var up struct {
-		UploadURL string `json:"upload_url"`
-		PublicURL string `json:"public_url"`
+		UploadURL     string            `json:"upload_url"`
+		PublicURL     string            `json:"public_url"`
+		UploadHeaders map[string]string `json:"upload_headers"`
 	}
 	err := c.doJSON(ctx, http.MethodPost, apiBase+"/files/generate-upload-url",
 		map[string]string{"content_type": contentType}, nil, &up)
@@ -109,6 +110,11 @@ func (c *Client) UploadImage(ctx context.Context, contentType string, data []byt
 		return "", fmt.Errorf("hf upload request: %w", err)
 	}
 	req.Header.Set("Content-Type", contentType)
+	// Подпись покрывает upload_headers (x-amz-tagging и др.): без любого из них S3
+	// отвечает SignatureDoesNotMatch.
+	for k, v := range up.UploadHeaders {
+		req.Header.Set(k, v)
+	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("hf upload put: %w", err)
