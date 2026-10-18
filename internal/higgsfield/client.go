@@ -115,7 +115,10 @@ func (c *Client) UploadImage(ctx context.Context, contentType string, data []byt
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
-		return "", fmt.Errorf("hf upload put: %s", resp.Status)
+		// Причину (SignatureDoesNotMatch, AccessDenied…) хранилище пишет в теле.
+		var buf bytes.Buffer
+		_, _ = buf.ReadFrom(io.LimitReader(resp.Body, 2048))
+		return "", fmt.Errorf("hf upload put: %s: %s", resp.Status, strings.TrimSpace(buf.String()))
 	}
 	return up.PublicURL, nil
 }
