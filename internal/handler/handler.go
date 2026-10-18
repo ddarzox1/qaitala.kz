@@ -47,6 +47,10 @@ func (h *Handler) Register(e *echo.Echo) {
 		e.GET("/fake-pay/:token", h.FakePay)
 	}
 
+	if h.cfg.AdminPassword != "" {
+		h.registerAdmin(e)
+	}
+
 	e.GET("/", h.Index)
 	e.GET("/o/:token", h.Index)
 }

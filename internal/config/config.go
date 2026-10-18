@@ -29,6 +29,9 @@ type Config struct {
 	R2Bucket    string `envconfig:"R2_BUCKET" required:"true"`
 	R2PublicURL string `envconfig:"R2_PUBLIC_URL" required:"true"`
 
+	// Пароль для /admin. Пустой — админки нет вовсе.
+	AdminPassword string `envconfig:"ADMIN_PASSWORD"`
+
 	WorkerConcurrency int `envconfig:"WORKER_CONCURRENCY" default:"2"`
 
 	// Прогон всего потока без обращения к Kaspi и Higgsfield — и без трат.

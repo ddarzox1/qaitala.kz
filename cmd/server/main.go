@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -57,11 +58,16 @@ func main() {
 	gen.Run(ctx, cfg.WorkerConcurrency)
 
 	handler.IndexHTML = qaitala.IndexHTML
+	handler.AdminHTML = qaitala.AdminHTML
 
 	e := echo.New()
 	e.HideBanner, e.HidePort = true, true
 	e.Use(middleware.Recover())
-	e.Use(middleware.BodyLimit("64M"))
+	// Админка грузит исходные ролики, они бывают тяжелее: у неё свой лимит.
+	e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
+		Limit:   "64M",
+		Skipper: func(c echo.Context) bool { return strings.HasPrefix(c.Request().URL.Path, "/admin") },
+	}))
 	handler.New(cfg, orders, templates, kaspiCl, gen, store, log).Register(e)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: e}

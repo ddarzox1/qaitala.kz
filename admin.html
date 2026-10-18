@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>qaitala — шаблоны</title>
+<style>
+html,body{margin:0;background:#F5F3EE;color:#17171A;font:15px/1.4 system-ui,sans-serif}
+*{box-sizing:border-box}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:22px;margin:0 0 16px}
+h2{font-size:18px;margin:32px 0 12px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+td,th{padding:8px 10px;text-align:left;border-bottom:1px solid #E6E3DC;vertical-align:middle}
+th{font-size:12px;color:#77756E;font-weight:600}
+td img{width:48px;height:64px;object-fit:cover;border-radius:6px;display:block;background:#ddd}
+.muted{color:#77756E;font-size:13px}
+form{background:#fff;border-radius:12px;padding:16px;display:grid;gap:12px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+label{display:grid;gap:4px;font-size:13px;color:#55554F}
+label.check{display:flex;align-items:center;gap:8px;color:#17171A}
+input,textarea,select{font:inherit;padding:8px 10px;border:1px solid #D6D3CC;border-radius:8px;background:#fff;width:100%}
+input[type=checkbox]{width:auto}
+textarea{min-height:80px;resize:vertical}
+button{font:inherit;padding:8px 14px;border:0;border-radius:8px;background:#17171A;color:#fff;cursor:pointer}
+button.ghost{background:#E6E3DC;color:#17171A}
+button:disabled{opacity:.5;cursor:wait}
+#err{color:#C0362C;white-space:pre-wrap}
+#ok{color:#2E7D32}
+</style>
+</head>
+<body>
+<main>
+<h1>Шаблоны</h1>
+<table>
+  <thead><tr><th></th><th>id</th><th>Название</th><th>Длина</th><th>Фото</th><th>Цены 480/720/1080</th><th>В каталоге</th><th></th></tr></thead>
+  <tbody id="list"><tr><td colspan="8" class="muted">Загрузка…</td></tr></tbody>
+</table>
+
+<h2 id="formTitle">Новый шаблон</h2>
+<form id="form">
+  <div class="row">
+    <label>id (папка, латиница)<input name="id" required pattern="[a-z0-9_\-]{1,40}"></label>
+    <label>Название<input name="name" required></label>
+    <label>Порядок в каталоге<input name="sort" type="number" value="0"></label>
+  </div>
+  <div class="row">
+    <label>Описание ru<input name="desc_ru"></label>
+    <label>Описание kz<input name="desc_kz"></label>
+  </div>
+  <label>Prompt для Genjutsu<textarea name="prompt" required></textarea></label>
+  <div class="row">
+    <label>Подписи слотов ru (по одной на строку = одно фото)<textarea name="slot_labels_ru" required></textarea></label>
+    <label>Подписи слотов kz (столько же строк)<textarea name="slot_labels_kz" required></textarea></label>
+  </div>
+  <div class="row">
+    <label>Цена 480p, ₸<input name="price_480p" type="number" min="1"></label>
+    <label>Цена 720p, ₸<input name="price_720p" type="number" min="1"></label>
+    <label>Цена 1080p, ₸<input name="price_1080p" type="number" min="1"></label>
+  </div>
+  <div class="row">
+    <label>Видео (4–30 сек; пусто = оставить прежнее)<input name="video" type="file" accept="video/*"></label>
+    <label>Секунда постера (пусто = 35% длины)<input name="poster_at" type="number" step="0.1" min="0"></label>
+  </div>
+  <div class="row">
+    <label class="check"><input name="popular" type="checkbox"> Плашка «Популярное»</label>
+    <label class="check"><input name="active" type="checkbox"> Показывать в каталоге</label>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button id="save">Сохранить</button>
+    <button type="button" class="ghost" id="reset">Очистить</button>
+    <span id="ok"></span>
+  </div>
+  <div id="err"></div>
+</form>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const form = $('#form');
+let items = [];
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const price = p => p == null ? '—' : p;
+const num = v => v === '' ? null : Number(v);
+const lines = v => v.split('\n').map(s => s.trim()).filter(Boolean);
+
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.status === 204 ? null : r.json();
+}
+
+async function load() {
+  items = await api('/admin/api/templates');
+  $('#list').innerHTML = items.length ? items.map((t, i) => {
+    const noPrice = t.price_480p == null && t.price_720p == null && t.price_1080p == null;
+    return `<tr>
+      <td><a href="${esc(t.clip_url)}" target="_blank"><img src="${esc(t.poster_url)}" alt=""></a></td>
+      <td>${esc(t.id)}</td>
+      <td>${esc(t.name)}${t.popular ? ' <span class="muted">★</span>' : ''}</td>
+      <td>${t.duration_sec.toFixed(1)}с</td>
+      <td>${t.slot_labels_ru.length}</td>
+      <td>${price(t.price_480p)} / ${price(t.price_720p)} / ${price(t.price_1080p)}</td>
+      <td><input type="checkbox" data-active="${i}" ${t.active ? 'checked' : ''} ${noPrice && !t.active ? 'disabled title="Сначала задай цену"' : ''}></td>
+      <td><button class="ghost" data-edit="${i}">Изменить</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="8" class="muted">Пока пусто — заведи первый шаблон ниже.</td></tr>';
+}
+
+$('#list').addEventListener('click', async e => {
+  const t = items[e.target.dataset.edit ?? e.target.dataset.active];
+  if (!t) return;
+  if (e.target.dataset.active != null) {
+    e.target.disabled = true;
+    try { await api(`/admin/api/templates/${encodeURIComponent(t.id)}/active`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({active: e.target.checked}) }); }
+    catch (err) { alert(err.message); }
+    await load();
+    return;
+  }
+  fill(t);
+});
+
+function fill(t) {
+  form.reset();
+  for (const k of ['id','name','sort','desc_ru','desc_kz','prompt','price_480p','price_720p','price_1080p'])
+    form.elements[k].value = t[k] ?? '';
+  form.elements.slot_labels_ru.value = t.slot_labels_ru.join('\n');
+  form.elements.slot_labels_kz.value = t.slot_labels_kz.join('\n');
+  form.elements.popular.checked = t.popular;
+  form.elements.active.checked = t.active;
+  form.elements.id.readOnly = true;
+  $('#formTitle').textContent = 'Изменить: ' + t.id;
+  $('#err').textContent = $('#ok').textContent = '';
+  form.scrollIntoView({behavior: 'smooth'});
+}
+
+$('#reset').onclick = () => {
+  form.reset();
+  form.elements.id.readOnly = false;
+  $('#formTitle').textContent = 'Новый шаблон';
+  $('#err').textContent = $('#ok').textContent = '';
+};
+
+form.onsubmit = async e => {
+  e.preventDefault();
+  const f = form.elements;
+  const data = {
+    id: f.id.value.trim(), name: f.name.value.trim(), sort: Number(f.sort.value) || 0,
+    desc_ru: f.desc_ru.value.trim(), desc_kz: f.desc_kz.value.trim(), prompt: f.prompt.value.trim(),
+    slot_labels_ru: lines(f.slot_labels_ru.value), slot_labels_kz: lines(f.slot_labels_kz.value),
+    price_480p: num(f.price_480p.value), price_720p: num(f.price_720p.value), price_1080p: num(f.price_1080p.value),
+    poster_at: num(f.poster_at.value), popular: f.popular.checked, active: f.active.checked,
+  };
+  const body = new FormData();
+  body.append('data', JSON.stringify(data));
+  if (f.video.files[0]) body.append('video', f.video.files[0]);
+
+  const btn = $('#save');
+  btn.disabled = true;
+  btn.textContent = f.video.files[0] ? 'Загрузка и обработка видео…' : 'Сохраняем…';
+  $('#err').textContent = $('#ok').textContent = '';
+  try {
+    await api('/admin/api/templates', {method: 'POST', body});
+    $('#ok').textContent = 'Сохранено: ' + data.id;
+    await load();
+    const t = items.find(x => x.id === data.id);
+    if (t) fill(t);
+    $('#ok').textContent = 'Сохранено: ' + data.id;
+  } catch (err) {
+    $('#err').textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Сохранить';
+  }
+};
+
+load().catch(err => { $('#list').innerHTML = `<tr><td colspan="8" id="err">${esc(err.message)}</td></tr>`; });
+</script>
+</body>
+</html>

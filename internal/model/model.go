@@ -39,6 +39,7 @@ type Template struct {
 	Price1080    *int     `json:"price_1080p"`
 	Popular      bool     `json:"popular"`
 	Sort         int      `json:"-"`
+	Active       bool     `json:"-"`
 }
 
 // Localize заполняет поля, зависящие от языка. Клиенту уходит только нужный язык.

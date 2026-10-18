@@ -12,5 +12,12 @@ func (h *Handler) Index(c echo.Context) error {
 	return c.Blob(http.StatusOK, "text/html; charset=utf-8", IndexHTML)
 }
 
+func (h *Handler) AdminIndex(c echo.Context) error {
+	return c.Blob(http.StatusOK, "text/html; charset=utf-8", AdminHTML)
+}
+
+// AdminHTML задаётся при старте, как и IndexHTML.
+var AdminHTML []byte
+
 // IndexHTML задаётся при старте — файл вшит в бинарник в cmd/server.
 var IndexHTML []byte

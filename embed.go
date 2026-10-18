@@ -8,5 +8,8 @@ import "embed"
 //go:embed index.html
 var IndexHTML []byte
 
+//go:embed admin.html
+var AdminHTML []byte
+
 //go:embed migrations/*.sql
 var Migrations embed.FS
