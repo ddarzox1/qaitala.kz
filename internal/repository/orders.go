@@ -31,13 +31,14 @@ func NewToken() string {
 const orderCols = `token, template_id, resolution, lang, coalesce(email,''), status,
 	photo_keys, amount_kzt, qr_operation_id, coalesce(kaspi_payment_id,''),
 	coalesce(hf_request_id,''), coalesce(video_key,''), retries_used, attempts,
-	coalesce(error,''), created_at, paid_at, done_at`
+	coalesce(error,''), created_at, paid_at, done_at, coalesce(pay_url,''), qr_expires_at`
 
 func scanOrder(row pgx.Row) (*model.Order, error) {
 	var o model.Order
 	err := row.Scan(&o.Token, &o.TemplateID, &o.Resolution, &o.Lang, &o.Email, &o.Status,
 		&o.PhotoKeys, &o.AmountKZT, &o.QROperationID, &o.KaspiPaymentID, &o.HFRequestID,
-		&o.VideoKey, &o.RetriesUsed, &o.Attempts, &o.Error, &o.CreatedAt, &o.PaidAt, &o.DoneAt)
+		&o.VideoKey, &o.RetriesUsed, &o.Attempts, &o.Error, &o.CreatedAt, &o.PaidAt, &o.DoneAt,
+		&o.PayURL, &o.QRExpiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -71,12 +72,14 @@ func (r *Orders) ByQROperation(ctx context.Context, qrID int64) (*model.Order, e
 }
 
 // AwaitPayment привязывает заказ к QR-операции Kaspi. qr_operation_id под UNIQUE:
-// создать два заказа на один платёж нельзя.
-func (r *Orders) AwaitPayment(ctx context.Context, token string, qrID int64, email string) error {
+// создать два заказа на один платёж нельзя. Пустой email не стирает прежний.
+func (r *Orders) AwaitPayment(ctx context.Context, token string, qrID int64,
+	payURL string, expiresAt time.Time, email string) error {
 	ct, err := r.db.Exec(ctx, `
-		UPDATE orders SET status = $1, qr_operation_id = $2, email = nullif($3,'')
+		UPDATE orders SET status = $1, qr_operation_id = $2, email = coalesce(nullif($3,''), email),
+			pay_url = $6, qr_expires_at = $7
 		WHERE token = $4 AND status IN ($5, $1)`,
-		model.StatusAwaitPay, qrID, email, token, model.StatusDraft)
+		model.StatusAwaitPay, qrID, email, token, model.StatusDraft, payURL, expiresAt)
 	if err != nil {
 		return fmt.Errorf("orders await payment: %w", err)
 	}
@@ -189,4 +192,36 @@ func (r *Orders) Stalled(ctx context.Context, older time.Duration) ([]*model.Ord
 		out = append(out, o)
 	}
 	return out, rows.Err()
+}
+
+// Unstick возвращает в очередь заказы, взятые воркером, но так и не
+// отправленные в Higgsfield: процесс упал между ClaimJob и SetHFRequest.
+// Повторная отправка безопасна — Idempotency-Key равен токену заказа.
+// После трёх попыток заказ считается проваленным, чтобы не крутиться вечно.
+func (r *Orders) Unstick(ctx context.Context, older time.Duration, reason string) (int64, error) {
+	ct, err := r.db.Exec(ctx, `
+		UPDATE orders SET
+			status = CASE WHEN attempts >= 3 THEN $1 ELSE $2 END,
+			error  = CASE WHEN attempts >= 3 THEN $3 ELSE NULL END
+		WHERE status = $4 AND hf_request_id IS NULL
+		  AND locked_at < now() - make_interval(secs => $5)`,
+		model.StatusFailed, model.StatusPaid, reason, model.StatusGenerating, older.Seconds())
+	if err != nil {
+		return 0, fmt.Errorf("orders unstick: %w", err)
+	}
+	return ct.RowsAffected(), nil
+}
+
+// ExpireStale закрывает брошенные заказы. Неоплаченный QR к этому моменту
+// давно истёк, так что поздняя оплата по нему невозможна.
+func (r *Orders) ExpireStale(ctx context.Context, older time.Duration) (int64, error) {
+	ct, err := r.db.Exec(ctx, `
+		UPDATE orders SET status = $1
+		WHERE (status = $2 AND created_at < now() - make_interval(secs => $4))
+		   OR (status = $3 AND coalesce(qr_expires_at, created_at) < now() - make_interval(secs => $4))`,
+		model.StatusExpired, model.StatusDraft, model.StatusAwaitPay, older.Seconds())
+	if err != nil {
+		return 0, fmt.Errorf("orders expire: %w", err)
+	}
+	return ct.RowsAffected(), nil
 }

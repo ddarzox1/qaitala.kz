@@ -22,6 +22,24 @@ import (
 // SMS-авторизацию заново, поэтому ошибку нельзя глотать: оплата недоступна.
 var ErrUnauthorized = errors.New("kaspi: сессия недействительна, нужна повторная SMS-авторизация")
 
+// StatusProcessed — единственный статус QR-операции, означающий, что деньги пришли.
+const StatusProcessed = "Processed"
+
+// almaty — часовой пояс Kaspi: ExpireDate приходит без смещения.
+var almaty = time.FixedZone("ALMT", 5*3600)
+
+// parseExpire разбирает ExpireDate. Не разобралось — считаем, что QR живёт
+// пять минут: лучше выдать новый раньше, чем держать мёртвый.
+func parseExpire(s string, now time.Time) time.Time {
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t
+	}
+	if t, err := time.ParseInLocation("2006-01-02T15:04:05", s, almaty); err == nil {
+		return t
+	}
+	return now.Add(5 * time.Minute) // ponytail: предположение о сроке жизни QR
+}
+
 type Client struct {
 	base      string
 	tokenSN   string
@@ -119,9 +137,7 @@ func (c *Client) CreateQR(ctx context.Context, amountKZT int) (*QR, error) {
 		PayURL:      env.Data.QrToken,
 		ReceiptURL:  env.Data.ReceiptURL,
 		Amount:      env.Data.Amount,
-	}
-	if t, err := time.Parse(time.RFC3339, env.Data.ExpireDate); err == nil {
-		qr.ExpiresAt = t
+		ExpiresAt:   parseExpire(env.Data.ExpireDate, time.Now()),
 	}
 	return qr, nil
 }

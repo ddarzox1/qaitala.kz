@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"testing"
+	"time"
 )
 
 const secret = "whsec_test_123"
@@ -43,5 +44,20 @@ func TestVerifySignature(t *testing.T) {
 		if VerifySignature(key, c.body, c.hdr) {
 			t.Errorf("%s: подпись принята, хотя не должна", c.name)
 		}
+	}
+}
+
+// От срока жизни QR зависит, отдадим ли старый QR повторно.
+func TestParseExpire(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	if got := parseExpire("2025-01-01T12:05:00", now); !got.Equal(time.Date(2025, 1, 1, 7, 5, 0, 0, time.UTC)) {
+		t.Errorf("без пояса должно читаться как +05:00, получено %v", got)
+	}
+	if got := parseExpire("2025-01-01T12:05:00Z", now); !got.Equal(time.Date(2025, 1, 1, 12, 5, 0, 0, time.UTC)) {
+		t.Errorf("RFC3339 разобран неверно: %v", got)
+	}
+	if got := parseExpire("мусор", now); !got.Equal(now.Add(5 * time.Minute)) {
+		t.Errorf("фолбэк должен быть now+5м, получено %v", got)
 	}
 }

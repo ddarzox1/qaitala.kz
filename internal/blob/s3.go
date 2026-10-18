@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type Store struct {
@@ -30,16 +29,20 @@ func New(endpoint, region, bucket, key, secret, publicBase string) *Store {
 }
 
 // Put кладёт объект. Всё под public/ читается анонимно: это витрина, её же
-// скачивает Higgsfield как video_url. Остальное приватно.
+// скачивает Higgsfield как video_url. Остальное приватно и отдаётся только
+// через PresignGet.
+//
+// ponytail: прав на объекте нет — в R2 их не существует, публична сразу вся
+// корзина. Приватность orders/* держит WAF custom rule на зоне qaitala.kz:
+// всё на cdn.qaitala.kz вне /public/ блокируется. Снесёшь правило — откроешь
+// фото клиентов. Нужна жёсткая гарантия вместо правила — вторая корзина
+// без публичного домена.
 func (s *Store) Put(ctx context.Context, key, contentType string, body io.Reader) error {
 	in := &s3.PutObjectInput{
 		Bucket:      &s.bucket,
 		Key:         &key,
 		Body:        body,
 		ContentType: &contentType,
-	}
-	if strings.HasPrefix(key, "public/") {
-		in.ACL = types.ObjectCannedACLPublicRead
 	}
 	_, err := s.cl.PutObject(ctx, in)
 	if err != nil {

@@ -61,8 +61,8 @@ func (h *Handler) KaspiWebhook(c echo.Context) error {
 			"token", order.Token, "ждали", order.AmountKZT, "пришло", amount)
 		return c.NoContent(http.StatusOK)
 	}
-	if status == "" {
-		h.log.Warn("пустой статус у QR-операции", "qr_operation_id", qrID)
+	if status != kaspi.StatusProcessed {
+		h.log.Warn("платёж не подтверждён Kaspi", "qr_operation_id", qrID, "status", status)
 		return c.NoContent(http.StatusOK)
 	}
 

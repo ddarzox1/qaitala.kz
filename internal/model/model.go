@@ -73,6 +73,8 @@ type Order struct {
 	PhotoKeys      []string
 	AmountKZT      int
 	QROperationID  *int64
+	PayURL         string
+	QRExpiresAt    *time.Time
 	KaspiPaymentID string
 	HFRequestID    string
 	VideoKey       string

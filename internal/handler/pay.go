@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -40,36 +41,44 @@ func (h *Handler) Pay(c echo.Context) error {
 		return fail(c, http.StatusConflict, "заказ уже оплачен")
 	}
 
-	if h.cfg.FakePayments {
-		if err := h.orders.AwaitPayment(ctx, o.Token, fakeQROperationID(o.Token), req.Email); err != nil {
-			return h.oops(c, err, "оплата: заглушка")
+	var qr *kaspi.QR
+	switch {
+	case o.Status == model.StatusAwaitPay && o.PayURL != "" && o.QROperationID != nil &&
+		o.QRExpiresAt != nil && time.Until(*o.QRExpiresAt) > qrReuseMargin:
+		// Прежний QR ещё можно оплатить. Новый перезаписал бы qr_operation_id,
+		// и оплата по старому не нашла бы заказ.
+		qr = &kaspi.QR{OperationID: *o.QROperationID, PayURL: o.PayURL, ExpiresAt: *o.QRExpiresAt}
+	case h.cfg.FakePayments:
+		qr = &kaspi.QR{
+			OperationID: fakeQROperationID(o.Token),
+			PayURL:      h.cfg.PublicBaseURL + "/fake-pay/" + o.Token,
+			ExpiresAt:   time.Now().Add(5 * time.Minute),
 		}
-		return c.JSON(http.StatusOK, payResponse{
-			PayURL:    h.cfg.PublicBaseURL + "/fake-pay/" + o.Token,
-			AmountKZT: o.AmountKZT,
-		})
+	default:
+		qr, err = h.kaspi.CreateQR(ctx, o.AmountKZT)
+		if errors.Is(err, kaspi.ErrUnauthorized) {
+			// Сессия Kaspi протухла. Молча ронять оплату нельзя — её продлевают руками.
+			h.log.Error("СЕССИЯ KASPI НЕДЕЙСТВИТЕЛЬНА, оплата недоступна", "token", o.Token)
+			return fail(c, http.StatusServiceUnavailable, "оплата временно недоступна, попробуй позже")
+		}
+		if err != nil {
+			return h.oops(c, err, "оплата: создание QR")
+		}
 	}
 
-	qr, err := h.kaspi.CreateQR(ctx, o.AmountKZT)
-	if errors.Is(err, kaspi.ErrUnauthorized) {
-		// Сессия Kaspi протухла. Молча ронять оплату нельзя — её продлевают руками.
-		h.log.Error("СЕССИЯ KASPI НЕДЕЙСТВИТЕЛЬНА, оплата недоступна", "token", o.Token)
-		return fail(c, http.StatusServiceUnavailable, "оплата временно недоступна, попробуй позже")
-	}
-	if err != nil {
-		return h.oops(c, err, "оплата: создание QR")
-	}
-
-	if err := h.orders.AwaitPayment(ctx, o.Token, qr.OperationID, req.Email); err != nil {
+	if err := h.orders.AwaitPayment(ctx, o.Token, qr.OperationID, qr.PayURL, qr.ExpiresAt, req.Email); err != nil {
 		return h.oops(c, err, "оплата: привязка QR")
 	}
 
-	resp := payResponse{PayURL: qr.PayURL, AmountKZT: o.AmountKZT}
-	if !qr.ExpiresAt.IsZero() {
-		resp.ExpiresAt = qr.ExpiresAt.Format("2006-01-02T15:04:05Z07:00")
-	}
-	return c.JSON(http.StatusOK, resp)
+	return c.JSON(http.StatusOK, payResponse{
+		PayURL:    qr.PayURL,
+		AmountKZT: o.AmountKZT,
+		ExpiresAt: qr.ExpiresAt.Format(time.RFC3339),
+	})
 }
+
+// qrReuseMargin — QR, которому осталось жить меньше, не отдаём: клиент не успеет.
+const qrReuseMargin = 15 * time.Second
 
 // FakePay заменяет приложение Kaspi при локальном прогоне.
 func (h *Handler) FakePay(c echo.Context) error {

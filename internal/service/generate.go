@@ -18,8 +18,11 @@ import (
 )
 
 const (
-	pollInterval   = time.Minute
-	stalledAfter   = 5 * time.Minute
+	pollInterval = time.Minute
+	stalledAfter = 5 * time.Minute
+	// С запасом над худшим submit: 8 фото × 60 с таймаута HTTP.
+	unstickAfter   = 15 * time.Minute
+	expireAfter    = 24 * time.Hour
 	claimIdle      = 3 * time.Second
 	presignTTL     = 6 * time.Hour
 	failUserFacing = "генерация не удалась"
@@ -196,6 +199,14 @@ func (g *Generator) reconcile(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
+		}
+		if n, err := g.orders.Unstick(ctx, unstickAfter, failUserFacing); err != nil {
+			g.log.Error("возврат неотправленных заказов", "err", err)
+		} else if n > 0 {
+			g.log.Warn("неотправленные заказы возвращены в очередь", "count", n)
+		}
+		if _, err := g.orders.ExpireStale(ctx, expireAfter); err != nil {
+			g.log.Error("закрытие брошенных заказов", "err", err)
 		}
 		stalled, err := g.orders.Stalled(ctx, stalledAfter)
 		if err != nil {

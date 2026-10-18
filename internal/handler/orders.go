@@ -157,7 +157,8 @@ func (h *Handler) Retry(c echo.Context) error {
 		return fail(c, http.StatusConflict, "бесплатный повтор недоступен")
 	}
 
-	tpl, err := h.tpls.Get(ctx, o.TemplateID)
+	// GetAny: заказ оплачен, снятие ролика с продажи не должно лишать повтора.
+	tpl, err := h.tpls.GetAny(ctx, o.TemplateID)
 	if err != nil {
 		return h.oops(c, err, "повтор: шаблон")
 	}
