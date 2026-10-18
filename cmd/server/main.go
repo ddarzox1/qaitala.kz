@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	store := blob.New(cfg.S3Endpoint, cfg.S3Region, cfg.S3Bucket, cfg.S3Key, cfg.S3Secret, cfg.S3PublicBase)
+	store := blob.New(cfg.R2Endpoint, "auto", cfg.R2Bucket, cfg.R2KeyID, cfg.R2Secret, cfg.R2PublicURL)
 	orders := repository.NewOrders(pool)
 	templates := repository.NewTemplates(pool)
 	kaspiCl := kaspi.New(cfg.KaspiBaseURL, cfg.KaspiTokenSN, cfg.KaspiVtokenSecret, cfg.KaspiProfileID)

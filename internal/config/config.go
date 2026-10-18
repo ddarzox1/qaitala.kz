@@ -22,12 +22,12 @@ type Config struct {
 	HFKeySecret     string `envconfig:"HF_API_KEY_SECRET"`
 	HFWebhookSecret string `envconfig:"HF_WEBHOOK_SECRET"`
 
-	S3Endpoint   string `envconfig:"S3_ENDPOINT" required:"true"`
-	S3Region     string `envconfig:"S3_REGION" default:"auto"`
-	S3Bucket     string `envconfig:"S3_BUCKET" required:"true"`
-	S3Key        string `envconfig:"S3_KEY" required:"true"`
-	S3Secret     string `envconfig:"S3_SECRET" required:"true"`
-	S3PublicBase string `envconfig:"S3_PUBLIC_BASE" required:"true"`
+	R2AccountID string `envconfig:"R2_ACCOUNT_ID"`
+	R2Endpoint  string `envconfig:"R2_ENDPOINT"` // локально: SeaweedFS; в бою выводится из R2_ACCOUNT_ID
+	R2KeyID     string `envconfig:"R2_ACCESS_KEY_ID" required:"true"`
+	R2Secret    string `envconfig:"R2_SECRET_ACCESS_KEY" required:"true"`
+	R2Bucket    string `envconfig:"R2_BUCKET" required:"true"`
+	R2PublicURL string `envconfig:"R2_PUBLIC_URL" required:"true"`
 
 	WorkerConcurrency int `envconfig:"WORKER_CONCURRENCY" default:"2"`
 
@@ -41,6 +41,12 @@ func Load() Config {
 	var c Config
 	if err := envconfig.Process("", &c); err != nil {
 		log.Fatalf("config: %v", err)
+	}
+	if c.R2Endpoint == "" {
+		if c.R2AccountID == "" {
+			log.Fatal("config: нужен R2_ACCOUNT_ID (или R2_ENDPOINT)")
+		}
+		c.R2Endpoint = "https://" + c.R2AccountID + ".r2.cloudflarestorage.com"
 	}
 	if !c.FakePayments && (c.KaspiTokenSN == "" || c.KaspiVtokenSecret == "") {
 		log.Fatal("config: нужны KASPI_TOKEN_SN и KASPI_VTOKEN_SECRET (или FAKE_PAYMENTS=1)")

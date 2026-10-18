@@ -24,12 +24,11 @@ Higgsfield Genjutsu подставляет его в ролик, готовое 
    PUBLIC_BASE_URL=http://localhost:8099
    DATABASE_URL=postgres://qaitala:qaitala@localhost:5434/qaitala?sslmode=disable
 
-   S3_ENDPOINT=http://localhost:8333
-   S3_REGION=us-east-1
-   S3_BUCKET=qaitala
-   S3_KEY=dev
-   S3_SECRET=dev
-   S3_PUBLIC_BASE=http://localhost:8333/qaitala
+   R2_ENDPOINT=http://localhost:8333
+   R2_BUCKET=qaitala
+   R2_ACCESS_KEY_ID=dev
+   R2_SECRET_ACCESS_KEY=dev
+   R2_PUBLIC_URL=http://localhost:8333/qaitala
 
    FAKE_PAYMENTS=true
    FAKE_VIDEO=true
@@ -91,11 +90,11 @@ cp .env.example .env
 | `KASPI_WEBHOOK_SECRET` | случайная строка, та же, что в `webhooks.json` kaspi-сервиса |
 | `HF_API_KEY_ID`, `HF_API_KEY_SECRET` | console.higgsfield.ai |
 | `HF_WEBHOOK_SECRET` | случайная строка |
-| `S3_*` | Cloudflare R2: эндпоинт аккаунта, токен Object Read & Write на корзину, публичный домен |
+| `R2_*` | Cloudflare R2: Account ID, токен Object Read & Write на корзину, имя корзины, публичный домен |
 | `WORKER_CONCURRENCY` | не выше лимита аккаунта Higgsfield, иначе он отвечает 400 |
 
 > **Хранилище.** В R2 публична вся корзина целиком. Фото клиентов и готовые
-> ролики (`orders/*`) закрывает только WAF-правило на домене `S3_PUBLIC_BASE`,
+> ролики (`orders/*`) закрывает только WAF-правило на домене `R2_PUBLIC_URL`,
 > которое пропускает лишь `/public/`. Правило приведено в `.env.example`.
 > Без него фото клиентов открыты.
 
