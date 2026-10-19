@@ -1,9 +1,14 @@
 package kaspi
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -59,5 +64,32 @@ func TestParseExpire(t *testing.T) {
 	}
 	if got := parseExpire("мусор", now); !got.Equal(now.Add(5 * time.Minute)) {
 		t.Errorf("фолбэк должен быть now+5м, получено %v", got)
+	}
+}
+
+// Денежный путь: отказ Kaspi приходит с HTTP 200, его нельзя принять за успех.
+func TestRefund(t *testing.T) {
+	var resp, gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		io.WriteString(w, resp)
+	}))
+	defer srv.Close()
+	c := New(srv.URL, "sn", "vt", "")
+
+	resp = `{"StatusCode":0,"Data":{}}`
+	if err := c.Refund(context.Background(), 789, 2990); err != nil {
+		t.Fatalf("успех принят за ошибку: %v", err)
+	}
+	if !strings.Contains(gotBody, `"qrOperationId":789`) || !strings.Contains(gotBody, `"returnAmount":2990`) {
+		t.Errorf("тело запроса: %s", gotBody)
+	}
+
+	for _, bad := range []string{`{"StatusCode":-1,"Message":"Сумма превышает"}`, `{"error":"fetch failed"}`} {
+		resp = bad
+		if err := c.Refund(context.Background(), 789, 2990); err == nil {
+			t.Errorf("отказ принят за успех: %s", bad)
+		}
 	}
 }

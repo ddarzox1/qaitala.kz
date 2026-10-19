@@ -54,7 +54,7 @@ function writeTokens(list) {
 }
 const saveToken = t => writeTokens([t, ...savedTokens().filter(x => x !== t)]);
 const dropToken = t => writeTokens(savedTokens().filter(x => x !== t));
-const LISTED = ['paid', 'generating', 'done', 'failed', 'refund_requested'];
+const LISTED = ['paid', 'generating', 'done', 'failed', 'refund_requested', 'refunded'];
 const fmt = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₸';
 const RES = ['480p', '720p', '1080p'];
 
@@ -70,7 +70,7 @@ const T = {
     genTitle:'Создаём твоё видео', genNote:'Можешь оставить страницу открытой или вернуться позже', usually:'обычно 2–3 минуты', steps:['Изучаем фото','Ставим свет','Собираем кадры','Добавляем движение','Финальные штрихи'],
     orderLink:'Ссылка на твой заказ', copy:'Копировать', copied:'Скопировано',
     ready:'Готово', download:'Скачать видео', share:'Поделиться', more:'Создать ещё', keep:'Видео доступно по ссылке 30 дней',
-    failTitle:'С этим фото не получилось', failText:'Так бывает, если лицо плохо видно или в кадре несколько людей. Загрузи другое фото — повтор бесплатный.', retry:'Загрузить другое фото', refund:'Вернуть деньги', refundNote:'Заявка принята. Деньги вернутся на карту в течение 1–3 дней.' },
+    failTitle:'С этим фото не получилось', failText:'Так бывает, если лицо плохо видно или в кадре несколько людей. Загрузи другое фото — повтор бесплатный.', retry:'Загрузить другое фото', refund:'Вернуть деньги', refundNote:'Заявка принята. Деньги вернутся на карту в течение 1–3 дней.', refundDone:'Деньги возвращены на карту Kaspi.', refundTitle:'Возвращаем деньги', resumeRefund:'Возврат оформлен', home:'На главную' },
   kz: { headline:'Трендті өз бетіңмен қайтала', sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', trust:'Тіркелусіз және жазылымсыз', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу',
     empty:'Әзірге ештеңе жоқ. Кейінірек кіріп шық.', loadErr:'Каталогты жүктеу мүмкін болмады', retryLoad:'Қайталау',
     resumeGen:'Видеоң жасалып жатыр', resumeDone:'Видеоң дайын', resumeFail:'Басқа фото керек',
@@ -82,7 +82,7 @@ const T = {
     genTitle:'Видеоңды жасап жатырмыз', genNote:'Бетті ашық қалдыруға немесе кейін оралуға болады', usually:'әдетте 2–3 минут', steps:['Фотоны зерттеп жатырмыз','Жарық қойып жатырмыз','Кадрларды жинап жатырмыз','Қозғалыс қосып жатырмыз','Соңғы штрихтар'],
     orderLink:'Тапсырысыңның сілтемесі', copy:'Көшіру', copied:'Көшірілді',
     ready:'Дайын', download:'Видеоны жүктеу', share:'Бөлісу', more:'Тағы жасау', keep:'Видео сілтеме арқылы 30 күн қолжетімді',
-    failTitle:'Бұл фотомен шықпады', failText:'Бет анық көрінбесе немесе кадрда бірнеше адам болса, солай болады. Басқа фото жүкте — қайталау тегін.', retry:'Басқа фото жүктеу', refund:'Ақшаны қайтару', refundNote:'Өтініш қабылданды. Ақша 1–3 күн ішінде картаңа қайтады.' },
+    failTitle:'Бұл фотомен шықпады', failText:'Бет анық көрінбесе немесе кадрда бірнеше адам болса, солай болады. Басқа фото жүкте — қайталау тегін.', retry:'Басқа фото жүктеу', refund:'Ақшаны қайтару', refundNote:'Өтініш қабылданды. Ақша 1–3 күн ішінде картаңа қайтады.', refundDone:'Ақша Kaspi картаңа қайтарылды.', refundTitle:'Ақшаны қайтарып жатырмыз', resumeRefund:'Қайтару рәсімделді', home:'Басты бетке' },
 };
 
 // ——— API ———————————————————————————————————————————————————————————————
@@ -269,8 +269,8 @@ class App extends Component {
 
   applyOrderScreen(order) {
     if (order.status === 'done') return this.setState({ screen:'result' });
-    if (order.status === 'failed' || order.status === 'refund_requested')
-      return this.setState({ screen:'fail', refunded: order.status === 'refund_requested' });
+    if (order.status === 'failed' || order.status === 'refund_requested' || order.status === 'refunded')
+      return this.setState({ screen:'fail', refunded: order.status !== 'failed' });
     if (order.status === 'paid' || order.status === 'generating') return this.startWatch(order.token);
     this.setState({ screen:'home' });
   }
@@ -430,7 +430,7 @@ class App extends Component {
 
       myOrders: s.orders.map(x => ({ token:x.token,
         title: x.status === 'done' ? L.resumeDone
-          : (x.status === 'failed' || x.status === 'refund_requested') ? L.resumeFail : L.resumeGen,
+          : (x.status === 'refund_requested' || x.status === 'refunded') ? L.resumeRefund : x.status === 'failed' ? L.resumeFail : L.resumeGen,
         tpl: s.templates.find(t => t.id === x.template_id),
         open:() => this.showOrder(x) })),
 
@@ -472,7 +472,7 @@ class App extends Component {
       startRetry:() => { this.setState({ screen:'detail', photos:[], uploadError:'' }); window.scrollTo(0,0); },
       doRetry:() => this.retry(),
       notRefunded: !s.refunded, refunded:s.refunded, refund:() => this.refund(),
-      refundNote:L.refundNote,
+      refundNote: s.order && s.order.status === 'refunded' ? L.refundDone : L.refundNote,
     };
   }
 
@@ -645,12 +645,12 @@ class App extends Component {
   fail(v) {
     return html`<div style="max-width:420px; margin:0 auto; padding:36px 16px 48px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:fade .4s ease both">
       <div style="width:56px; height:56px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 30px -12px rgba(23,23,26,.4)">${ICON.face}</div>
-      <h1 style="margin:22px 0 0; font-weight:800; font-size:23px; letter-spacing:-.03em; text-wrap:balance">${v.t.failTitle}</h1>
-      <p style="margin:10px 0 0; font-size:15px; line-height:1.5; color:#5F5E59; text-wrap:pretty">${v.t.failText}</p>
+      <h1 style="margin:22px 0 0; font-weight:800; font-size:23px; letter-spacing:-.03em; text-wrap:balance">${v.refunded ? v.t.refundTitle : v.t.failTitle}</h1>
+      <p style="margin:10px 0 0; font-size:15px; line-height:1.5; color:#5F5E59; text-wrap:pretty">${v.refunded ? v.refundNote : v.t.failText}</p>
       <div style="width:100%; margin-top:24px; display:flex; flex-direction:column; gap:10px">
-        ${v.o && v.o.can_retry && html`<button onClick=${v.startRetry} class="press" style="width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600">${v.t.retry}</button>`}
+        ${v.notRefunded && v.o && v.o.can_retry && html`<button onClick=${v.startRetry} class="press" style="width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600">${v.t.retry}</button>`}
         ${v.notRefunded && v.o && v.o.can_refund && html`<button onClick=${v.refund} style="width:100%; height:52px; border-radius:16px; cursor:pointer; background:transparent; border:1px solid rgba(23,23,26,.12); font-size:15px; font-weight:600">${v.t.refund}</button>`}
-        ${v.refunded && html`<div style="padding:14px; border-radius:16px; background:#fff; border:1px solid rgba(23,23,26,.07); font-size:14px; line-height:1.45; animation:fadeUp .25s ease both">${v.refundNote}</div>`}
+        ${v.refunded && html`<button onClick=${v.again} style="width:100%; height:52px; border-radius:16px; cursor:pointer; background:#fff; border:1px solid rgba(23,23,26,.1); font-size:15px; font-weight:600">${v.t.home}</button>`}
       </div>
     </div>`;
   }

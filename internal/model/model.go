@@ -5,6 +5,7 @@ import "time"
 // Статусы заказа. Переходы:
 // draft → awaiting_payment → paid → generating → done | failed
 // failed → generating (бесплатный повтор) | refund_requested
+// failed | refund_requested → refunded (возврат из админки)
 const (
 	StatusDraft      = "draft"
 	StatusAwaitPay   = "awaiting_payment"
@@ -14,6 +15,7 @@ const (
 	StatusFailed     = "failed"
 	StatusExpired    = "expired"
 	StatusRefundReq  = "refund_requested"
+	StatusRefunded   = "refunded"
 )
 
 var Resolutions = []string{"480p", "720p", "1080p"}

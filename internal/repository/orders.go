@@ -170,6 +170,56 @@ func (r *Orders) RequestRefund(ctx context.Context, token string) error {
 	return nil
 }
 
+// Refundable — заказы, по которым админ может вернуть деньги.
+func (r *Orders) Refundable(ctx context.Context) ([]*model.Order, error) {
+	rows, err := r.db.Query(ctx, `SELECT `+orderCols+` FROM orders
+		WHERE status IN ($1, $2) AND qr_operation_id IS NOT NULL
+		ORDER BY (status = $2) DESC, created_at DESC
+		LIMIT 100`, model.StatusFailed, model.StatusRefundReq)
+	if err != nil {
+		return nil, fmt.Errorf("orders refundable: %w", err)
+	}
+	defer rows.Close()
+	var out []*model.Order
+	for rows.Next() {
+		o, err := scanOrder(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, o)
+	}
+	return out, rows.Err()
+}
+
+// ClaimRefund помечает заказ возвращённым ДО запроса в Kaspi: повторный клик
+// уже не найдёт заказ, и деньги не уйдут дважды. Отдаёт прежний статус для отката.
+func (r *Orders) ClaimRefund(ctx context.Context, token string) (prevStatus string, qrID int64, amountKZT int, err error) {
+	err = r.db.QueryRow(ctx, `
+		UPDATE orders o SET status = $1, refunded_at = now()
+		FROM (SELECT token, status FROM orders WHERE token = $2 FOR UPDATE) prev
+		WHERE o.token = prev.token AND prev.status IN ($3, $4) AND o.qr_operation_id IS NOT NULL
+		RETURNING prev.status, o.qr_operation_id, o.amount_kzt`,
+		model.StatusRefunded, token, model.StatusFailed, model.StatusRefundReq).
+		Scan(&prevStatus, &qrID, &amountKZT)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", 0, 0, ErrNotFound
+	}
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("orders claim refund: %w", err)
+	}
+	return prevStatus, qrID, amountKZT, nil
+}
+
+// UnclaimRefund откатывает ClaimRefund, если Kaspi возврат не провёл.
+func (r *Orders) UnclaimRefund(ctx context.Context, token, prevStatus string) error {
+	_, err := r.db.Exec(ctx, `UPDATE orders SET status = $1, refunded_at = NULL
+		WHERE token = $2 AND status = $3`, prevStatus, token, model.StatusRefunded)
+	if err != nil {
+		return fmt.Errorf("orders unclaim refund: %w", err)
+	}
+	return nil
+}
+
 // Stalled — заказы в генерации дольше older. Вебхук Higgsfield могли не
 // доставить, поэтому их статус перепроверяется опросом.
 func (r *Orders) Stalled(ctx context.Context, older time.Duration) ([]*model.Order, error) {

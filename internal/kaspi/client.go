@@ -152,6 +152,27 @@ func (c *Client) QRStatus(ctx context.Context, operationID int64) (string, error
 	return env.Data.Status, nil
 }
 
+// Refund возвращает деньги по QR-операции. Прокси отдаёт ответ Kaspi как есть
+// и с HTTP 200 даже при отказе, поэтому смотрим StatusCode в теле.
+// ponytail: успешный ответ возврата не задокументирован; считаем успехом
+// StatusCode == 0, как у прочих методов Kaspi. Сверить на первом реальном возврате.
+func (c *Client) Refund(ctx context.Context, operationID int64, amountKZT int) error {
+	var env struct {
+		StatusCode int    `json:"StatusCode"`
+		Message    string `json:"Message"`
+		Error      string `json:"error"`
+	}
+	err := c.do(ctx, http.MethodPost, "/api/refund/create",
+		map[string]any{"qrOperationId": operationID, "returnAmount": amountKZT}, &env)
+	if err != nil {
+		return err
+	}
+	if env.StatusCode != 0 || env.Error != "" {
+		return fmt.Errorf("kaspi refund: StatusCode=%d %s%s", env.StatusCode, env.Message, env.Error)
+	}
+	return nil
+}
+
 // Webhook — тело уведомления от kaspi-pos-automation.
 type Webhook struct {
 	Event      string `json:"event"`

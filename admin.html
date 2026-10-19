@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>qaitala — шаблоны</title>
+<title>qaitala — админка</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2317171A'/%3E%3Ctext x='15' y='23' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='20' fill='%23fff' text-anchor='middle'%3Eq%3C/text%3E%3Ccircle cx='24' cy='22' r='3' fill='%23D2FF3A'/%3E%3C/svg%3E">
 <style>
 html,body{margin:0;background:#F5F3EE;color:#17171A;font:15px/1.4 system-ui,sans-serif}
@@ -33,7 +33,13 @@ button:disabled{opacity:.5;cursor:wait}
 </head>
 <body>
 <main>
-<h1>Шаблоны</h1>
+<h1>Возвраты</h1>
+<table>
+  <thead><tr><th>Заказ</th><th>Шаблон</th><th>Сумма</th><th>Статус</th><th>Оплачен</th><th>Ошибка</th><th></th></tr></thead>
+  <tbody id="refunds"><tr><td colspan="7" class="muted">Загрузка…</td></tr></tbody>
+</table>
+
+<h1 style="margin-top:32px">Шаблоны</h1>
 <table>
   <thead><tr><th></th><th>id</th><th>Название</th><th>Длина</th><th>Фото</th><th>Цены 480/720/1080</th><th>В каталоге</th><th></th></tr></thead>
   <tbody id="list"><tr><td colspan="8" class="muted">Загрузка…</td></tr></tbody>
@@ -177,6 +183,29 @@ form.onsubmit = async e => {
   }
 };
 
+async function loadRefunds() {
+  const list = await api('/admin/api/refunds');
+  $('#refunds').innerHTML = list.length ? list.map(o => `<tr>
+      <td><a href="/o/${esc(o.token)}" target="_blank">${esc(o.token.slice(0, 8))}</a><div class="muted">${esc(o.email)}</div></td>
+      <td>${esc(o.template_id)} <span class="muted">${esc(o.resolution)}</span></td>
+      <td>${o.amount_kzt} ₸</td>
+      <td>${o.status === 'refund_requested' ? '<b>просит возврат</b>' : 'ошибка генерации'}</td>
+      <td class="muted">${o.paid_at ? new Date(o.paid_at).toLocaleString('ru') : '—'}</td>
+      <td class="muted">${esc(o.error)}</td>
+      <td><button data-refund="${esc(o.token)}" data-amount="${o.amount_kzt}">Вернуть ${o.amount_kzt} ₸</button></td>
+    </tr>`).join('') : '<tr><td colspan="7" class="muted">Возвращать нечего.</td></tr>';
+}
+
+$('#refunds').addEventListener('click', async e => {
+  const token = e.target.dataset.refund;
+  if (!token || !confirm(`Вернуть ${e.target.dataset.amount} ₸ через Kaspi?`)) return;
+  e.target.disabled = true;
+  try { await api(`/admin/api/orders/${encodeURIComponent(token)}/refund`, {method: 'POST'}); }
+  catch (err) { alert(err.message); }
+  await loadRefunds().catch(err => alert(err.message));
+});
+
+loadRefunds().catch(err => { $('#refunds').innerHTML = `<tr><td colspan="7" id="err">${esc(err.message)}</td></tr>`; });
 load().catch(err => { $('#list').innerHTML = `<tr><td colspan="8" id="err">${esc(err.message)}</td></tr>`; });
 </script>
 </body>

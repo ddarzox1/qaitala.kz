@@ -1,16 +1,19 @@
 package handler
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/askhat/qaitala/internal/kaspi"
 	"github.com/askhat/qaitala/internal/repository"
 	"github.com/askhat/qaitala/internal/service"
 )
@@ -26,6 +29,8 @@ func (h *Handler) registerAdmin(e *echo.Echo) {
 	g.GET("/api/templates", h.AdminListTemplates)
 	g.POST("/api/templates", h.AdminSaveTemplate)
 	g.POST("/api/templates/:id/active", h.AdminSetActive)
+	g.GET("/api/refunds", h.AdminListRefunds)
+	g.POST("/api/orders/:token/refund", h.AdminRefund)
 }
 
 type adminTemplate struct {
@@ -113,5 +118,61 @@ func (h *Handler) AdminSetActive(c echo.Context) error {
 	if err != nil {
 		return h.oops(c, err, "админка: active")
 	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+type adminRefund struct {
+	Token      string     `json:"token"`
+	TemplateID string     `json:"template_id"`
+	Resolution string     `json:"resolution"`
+	Status     string     `json:"status"`
+	AmountKZT  int        `json:"amount_kzt"`
+	Email      string     `json:"email"`
+	Error      string     `json:"error"`
+	PaidAt     *time.Time `json:"paid_at"`
+}
+
+func (h *Handler) AdminListRefunds(c echo.Context) error {
+	list, err := h.orders.Refundable(c.Request().Context())
+	if err != nil {
+		return h.oops(c, err, "админка: возвраты")
+	}
+	out := make([]adminRefund, 0, len(list))
+	for _, o := range list {
+		out = append(out, adminRefund{
+			Token: o.Token, TemplateID: o.TemplateID, Resolution: o.Resolution, Status: o.Status,
+			AmountKZT: o.AmountKZT, Email: o.Email, Error: o.Error, PaidAt: o.PaidAt,
+		})
+	}
+	return c.JSON(http.StatusOK, out)
+}
+
+// AdminRefund возвращает деньги через Kaspi. Заказ захватывается до запроса,
+// при отказе Kaspi — откатывается, чтобы можно было повторить.
+func (h *Handler) AdminRefund(c echo.Context) error {
+	ctx := c.Request().Context()
+	token := c.Param("token")
+	prev, qrID, amount, err := h.orders.ClaimRefund(ctx, token)
+	if errors.Is(err, repository.ErrNotFound) {
+		return fail(c, http.StatusConflict, "заказ уже возвращён или возврат недоступен")
+	}
+	if err != nil {
+		return h.oops(c, err, "админка: возврат")
+	}
+
+	if !h.cfg.FakePayments {
+		err = h.kaspi.Refund(ctx, qrID, amount)
+	}
+	if err != nil {
+		if uerr := h.orders.UnclaimRefund(context.WithoutCancel(ctx), token, prev); uerr != nil {
+			h.log.Error("ВОЗВРАТ: откат статуса не удался", "token", token, "err", uerr)
+		}
+		h.log.Error("ВОЗВРАТ НЕ ПРОШЁЛ", "token", token, "qr_operation_id", qrID, "err", err)
+		if errors.Is(err, kaspi.ErrUnauthorized) {
+			return fail(c, http.StatusServiceUnavailable, "сессия Kaspi недействительна — нужна повторная SMS-авторизация")
+		}
+		return fail(c, http.StatusBadGateway, err.Error())
+	}
+	h.log.Warn("ДЕНЬГИ ВОЗВРАЩЕНЫ", "token", token, "amount_kzt", amount, "qr_operation_id", qrID)
 	return c.NoContent(http.StatusNoContent)
 }
