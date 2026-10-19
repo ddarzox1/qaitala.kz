@@ -27,7 +27,7 @@ textarea{min-height:80px;resize:vertical}
 button{font:inherit;padding:8px 14px;border:0;border-radius:8px;background:#17171A;color:#fff;cursor:pointer}
 button.ghost{background:#E6E3DC;color:#17171A}
 button:disabled{opacity:.5;cursor:wait}
-#err{color:#C0362C;white-space:pre-wrap}
+#err,.err{color:#C0362C;white-space:pre-wrap}
 #ok{color:#2E7D32}
 </style>
 </head>
@@ -76,7 +76,7 @@ button:disabled{opacity:.5;cursor:wait}
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <button id="save">Сохранить</button>
-    <button type="button" class="ghost" id="reset">Очистить</button>
+    <button type="button" class="ghost" id="clear">Очистить</button>
     <span id="ok"></span>
   </div>
   <div id="err"></div>
@@ -143,7 +143,7 @@ function fill(t) {
   form.scrollIntoView({behavior: 'smooth'});
 }
 
-$('#reset').onclick = () => {
+$('#clear').onclick = () => {
   form.reset();
   form.elements.id.readOnly = false;
   $('#formTitle').textContent = 'Новый шаблон';
@@ -205,8 +205,8 @@ $('#refunds').addEventListener('click', async e => {
   await loadRefunds().catch(err => alert(err.message));
 });
 
-loadRefunds().catch(err => { $('#refunds').innerHTML = `<tr><td colspan="7" id="err">${esc(err.message)}</td></tr>`; });
-load().catch(err => { $('#list').innerHTML = `<tr><td colspan="8" id="err">${esc(err.message)}</td></tr>`; });
+loadRefunds().catch(err => { $('#refunds').innerHTML = `<tr><td colspan="7" class="err">${esc(err.message)}</td></tr>`; });
+load().catch(err => { $('#list').innerHTML = `<tr><td colspan="8" class="err">${esc(err.message)}</td></tr>`; });
 </script>
 </body>
 </html>
