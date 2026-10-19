@@ -59,7 +59,7 @@ const fmt = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₸';
 const RES = ['480p', '720p', '1080p'];
 
 const T = {
-  ru: { headline:'Повтори тренд со своим лицом', sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', back:'Все видео', sec:'сек', trust:'Без регистрации и подписки', help:'Вопросы? Напиши в WhatsApp', open:'Открыть',
+  ru: { headlines:['Повтори тренд со своим лицом', 'Без регистрации — оплата через Kaspi QR', 'Получи 10 000 просмотров', 'Получи 100 000 просмотров', 'Получи 1 000 000 просмотров'], sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', back:'Все видео', sec:'сек', trust:'Без регистрации и подписки', help:'Вопросы? Напиши в WhatsApp', open:'Открыть',
     empty:'Пока ничего нет. Загляни позже.', loadErr:'Не удалось загрузить каталог', retryLoad:'Повторить',
     resumeGen:'Твоё видео создаётся', resumeDone:'Твоё видео готово', resumeFail:'Нужно другое фото',
     quality:'Качество', slotHint:'Лицо крупно, хороший свет', added:'Фото добавлено', replace:'Заменить',
@@ -71,7 +71,7 @@ const T = {
     orderLink:'Ссылка на твой заказ', copy:'Копировать', copied:'Скопировано',
     ready:'Готово', download:'Скачать видео', share:'Поделиться', more:'Создать ещё', keep:'Видео доступно по ссылке 30 дней',
     failTitle:'С этим фото не получилось', failText:'Так бывает, если лицо плохо видно или в кадре несколько людей. Загрузи другое фото — повтор бесплатный.', retry:'Загрузить другое фото', refund:'Вернуть деньги', refundNote:'Заявка принята. Деньги вернутся на карту в течение 1–3 дней.', refundDone:'Деньги возвращены на карту Kaspi.', refundTitle:'Возвращаем деньги', resumeRefund:'Возврат оформлен', home:'На главную' },
-  kz: { headline:'Трендті өз бетіңмен қайтала', sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', trust:'Тіркелусіз және жазылымсыз', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу',
+  kz: { headlines:['Трендті өз бетіңмен қайтала', 'Тіркелусіз — Kaspi QR арқылы төле', '10 000 қаралым ал', '100 000 қаралым ал', '1 000 000 қаралым ал'], sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', trust:'Тіркелусіз және жазылымсыз', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу',
     empty:'Әзірге ештеңе жоқ. Кейінірек кіріп шық.', loadErr:'Каталогты жүктеу мүмкін болмады', retryLoad:'Қайталау',
     resumeGen:'Видеоң жасалып жатыр', resumeDone:'Видеоң дайын', resumeFail:'Басқа фото керек',
     quality:'Сапасы', slotHint:'Бет анық, жарық жақсы', added:'Фото қосылды', replace:'Ауыстыру',
@@ -169,13 +169,14 @@ class App extends Component {
   state = {
     screen:'home', tplId:'', lang:'ru', resolution:'', photos:[], uploadError:'',
     sheet:null, email:'', step:0, copied:false, playing:true, shared:false, isDesk:false,
-    loading:true, loadError:'', templates:[], order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false,
+    loading:true, loadError:'', templates:[], order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false, hl:0,
   };
 
   componentDidMount() {
     this.onResize = () => this.setState({ isDesk: window.innerWidth >= 760 });
     this.onResize(); window.addEventListener('resize', this.onResize);
     this.loadTemplates();
+    this.hlI = setInterval(() => this.setState(s => ({ hl:s.hl + 1 })), 2800);
 
     const token = tokenFromPath();
     if (token) { saveToken(token); this.loadOrder(token); }
@@ -189,7 +190,7 @@ class App extends Component {
   }
   componentWillUnmount() {
     window.removeEventListener('resize', this.onResize);
-    this.stopTimers(); this.stopPreviews();
+    this.stopTimers(); this.stopPreviews(); clearInterval(this.hlI);
   }
   stopTimers() { clearInterval(this.stepI); clearInterval(this.pollI); }
 
@@ -420,7 +421,7 @@ class App extends Component {
     const orderUrl = o ? location.host + '/o/' + o.token : '';
 
     return {
-      t:L, cur, slots, o,
+      t:L, cur, slots, o, headline:L.headlines[s.hl % L.headlines.length],
       lang:s.lang, setLang: lang => this.setState({ lang }, () => this.loadTemplates()),
       goHome:() => { this.stopTimers(); this.setState({ screen:'home', sheet:null, photos:[] }); this.loadOrders(); window.scrollTo(0,0); },
       isHome:s.screen === 'home', isDetail:s.screen === 'detail', isGen:s.screen === 'gen',
@@ -490,7 +491,7 @@ class App extends Component {
               <span style="height:36px; padding:0 14px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:14px; font-weight:600; display:flex; align-items:center">${v.t.open}</span>
             </button>`)}
         </div>`}
-      <h1 style="margin:0; font-weight:800; font-size:clamp(30px, 7.6vw, 60px); line-height:1.08; letter-spacing:-.035em; text-wrap:balance; max-width:760px">${v.t.headline}</h1>
+      <h1 style="margin:0; font-weight:800; font-size:clamp(30px, 7.6vw, 60px); line-height:1.08; letter-spacing:-.035em; text-wrap:balance; max-width:760px; min-height:2.16em"><span key=${v.headline} style="display:inline-block; animation:fadeUp .5s ease both">${v.headline}</span></h1>
       <p style="margin:12px 0 0; font-size:17px; line-height:1.45; color:#5F5E59; max-width:440px; text-wrap:pretty">${v.t.sub}</p>
 
       ${v.loadError
