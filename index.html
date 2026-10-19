@@ -525,7 +525,7 @@ class App extends Component {
 
       <div style="margin-top:44px; padding-top:20px; border-top:1px solid rgba(23,23,26,.08); display:flex; flex-wrap:wrap; gap:8px 20px; justify-content:space-between; font-size:13px; color:#6B6A66">
         <span>${v.t.trust}</span>
-        <a href="https://wa.me/77000000000" style="color:#6B6A66">${v.t.help}</a>
+        <a href=${'https://wa.me/77064484218' + (savedTokens().length ? '?text=' + encodeURIComponent('ID: ' + savedTokens().map(t => t.slice(0, 8)).join(', ')) : '')} target="_blank" style="color:#6B6A66">${v.t.help}</a>
       </div>
     </div>`;
   }
