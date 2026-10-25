@@ -80,6 +80,7 @@ type Order struct {
 	QRExpiresAt    *time.Time
 	KaspiPaymentID string
 	HFRequestID    string
+	HFSegment      int
 	VideoKey       string
 	RetriesUsed    int
 	Attempts       int

@@ -30,14 +30,14 @@ func NewToken() string {
 
 const orderCols = `token, template_id, resolution, lang, coalesce(email,''), status,
 	photo_keys, amount_kzt, qr_operation_id, coalesce(kaspi_payment_id,''),
-	coalesce(hf_request_id,''), coalesce(video_key,''), retries_used, attempts,
+	coalesce(hf_request_id,''), hf_segment, coalesce(video_key,''), retries_used, attempts,
 	coalesce(error,''), created_at, paid_at, done_at, coalesce(pay_url,''), qr_expires_at`
 
 func scanOrder(row pgx.Row) (*model.Order, error) {
 	var o model.Order
 	err := row.Scan(&o.Token, &o.TemplateID, &o.Resolution, &o.Lang, &o.Email, &o.Status,
 		&o.PhotoKeys, &o.AmountKZT, &o.QROperationID, &o.KaspiPaymentID, &o.HFRequestID,
-		&o.VideoKey, &o.RetriesUsed, &o.Attempts, &o.Error, &o.CreatedAt, &o.PaidAt, &o.DoneAt,
+		&o.HFSegment, &o.VideoKey, &o.RetriesUsed, &o.Attempts, &o.Error, &o.CreatedAt, &o.PaidAt, &o.DoneAt,
 		&o.PayURL, &o.QRExpiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
@@ -114,8 +114,9 @@ func (r *Orders) ClaimJob(ctx context.Context) (*model.Order, error) {
 		RETURNING `+orderCols, model.StatusGenerating, model.StatusPaid))
 }
 
-func (r *Orders) SetHFRequest(ctx context.Context, token, reqID string) error {
-	_, err := r.db.Exec(ctx, `UPDATE orders SET hf_request_id = $1 WHERE token = $2`, reqID, token)
+func (r *Orders) SetHFRequest(ctx context.Context, token, reqID string, segment int) error {
+	_, err := r.db.Exec(ctx, `UPDATE orders SET hf_request_id = $1, hf_segment = $2 WHERE token = $3`,
+		reqID, segment, token)
 	if err != nil {
 		return fmt.Errorf("orders set hf request: %w", err)
 	}
@@ -146,7 +147,7 @@ func (r *Orders) MarkFailed(ctx context.Context, token, reason string) error {
 func (r *Orders) Requeue(ctx context.Context, token string, photoKeys []string) error {
 	ct, err := r.db.Exec(ctx, `
 		UPDATE orders SET status = $1, photo_keys = $2, retries_used = retries_used + 1,
-			hf_request_id = NULL, error = NULL
+			hf_request_id = NULL, hf_segment = 0, error = NULL
 		WHERE token = $3 AND status = $4 AND retries_used = 0`,
 		model.StatusPaid, photoKeys, token, model.StatusFailed)
 	if err != nil {

@@ -141,7 +141,7 @@ func countImageSlots(path string) (int, error) {
 		}
 	}
 	if n < 1 || n > 8 {
-		return 0, fmt.Errorf("слотов image_N: %d, Genjutsu принимает 1–8", n)
+		return 0, fmt.Errorf("слотов image_N: %d, qaitala поддерживает 1–8", n)
 	}
 	return n, nil
 }

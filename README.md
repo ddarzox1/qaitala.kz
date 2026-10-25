@@ -1,8 +1,13 @@
 # qaitala.kz
 
 Клиент выбирает шаблон-ролик, загружает свои фото и платит через Kaspi QR.
-Higgsfield Genjutsu подставляет его в ролик, готовое видео доступно по ссылке
+Higgsfield Genjutsu Lite подставляет его в ролик, готовое видео доступно по ссылке
 `/o/{token}`. Аккаунтов нет: токен в ссылке и есть доступ.
+
+Ролики до 15 секунд отправляются одной задачей. Более длинные ролики сервер
+делит пополам, генерирует части последовательно и склеивает результат. Это
+укладывается в лимит Lite, но на стыке половин возможна небольшая смена лица,
+одежды или света — длинные шаблоны нужно проверять особенно внимательно.
 
 Стек: Go 1.26, Postgres, S3-совместимое хранилище (в бою — Cloudflare R2), ffmpeg.
 Фронтенд — один `index.html`, вшит в бинарник вместе с миграциями.
@@ -88,7 +93,7 @@ cp .env.example .env
 | `KASPI_TOKEN_SECRET_KEY` | `openssl rand -hex 32` |
 | `KASPI_TOKEN_SN`, `KASPI_VTOKEN_SECRET`, `KASPI_PROFILE_ID` | после SMS-авторизации в kaspi-сервисе (шаг 3) |
 | `KASPI_WEBHOOK_SECRET` | случайная строка, та же, что в `webhooks.json` kaspi-сервиса |
-| `HF_API_KEY_ID`, `HF_API_KEY_SECRET` | console.higgsfield.ai |
+| `HF_API_KEY_ID`, `HF_API_KEY_SECRET` | open.higgsfield.ai; используются для Genjutsu Lite |
 | `HF_WEBHOOK_SECRET` | случайная строка |
 | `R2_*` | Cloudflare R2: Account ID, токен Object Read & Write на корзину, имя корзины, публичный домен |
 | `WORKER_CONCURRENCY` | не выше лимита аккаунта Higgsfield, иначе он отвечает 400 |

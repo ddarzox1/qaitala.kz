@@ -15,8 +15,8 @@ import (
 	"github.com/askhat/qaitala/internal/repository"
 )
 
-// Genjutsu режет всё, что длиннее 30 секунд. Подрезаем сами: иначе граничные
-// ролики обрежутся в непредсказуемом месте.
+// Два запроса Genjutsu Lite покрывают до 30 секунд. Подрезаем сами чуть раньше
+// границы, чтобы обе равные половины точно укладывались в лимит 15 секунд.
 const maxClipSec = 29.5
 
 // Первый кадр часто не отражает содержание ролика, поэтому постер берётся
@@ -63,7 +63,7 @@ func SaveTemplate(ctx context.Context, repo *repository.Templates, store *blob.S
 		return nil, err
 	}
 	if info.DurationSec < 4 {
-		return nil, fmt.Errorf("ролик короче 4 секунд (%.1f), Genjutsu такой не возьмёт", info.DurationSec)
+		return nil, fmt.Errorf("ролик короче 4 секунд (%.1f), Genjutsu Lite такой не возьмёт", info.DurationSec)
 	}
 
 	tmp, err := os.MkdirTemp("", "template")
@@ -122,7 +122,7 @@ func (in TemplateInput) validate() (*model.Template, error) {
 	}
 	n := len(in.SlotLabelsRu)
 	if n < 1 || n > 8 {
-		return nil, fmt.Errorf("фото: %d, Genjutsu принимает 1–8", n)
+		return nil, fmt.Errorf("фото: %d, qaitala поддерживает 1–8", n)
 	}
 	if len(in.SlotLabelsKz) != n {
 		return nil, fmt.Errorf("подписей ru %d, а kz %d", n, len(in.SlotLabelsKz))

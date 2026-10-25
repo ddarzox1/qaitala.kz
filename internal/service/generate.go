@@ -1,4 +1,4 @@
-// Package service — фоновая генерация: очередь, отправка в Genjutsu,
+// Package service — фоновая генерация: очередь, отправка в Genjutsu Lite,
 // разбор результата и подстраховка опросом.
 package service
 
@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/askhat/qaitala/internal/blob"
 	"github.com/askhat/qaitala/internal/higgsfield"
+	"github.com/askhat/qaitala/internal/media"
 	"github.com/askhat/qaitala/internal/model"
 	"github.com/askhat/qaitala/internal/repository"
 )
@@ -26,6 +29,10 @@ const (
 	claimIdle      = 3 * time.Second
 	presignTTL     = 6 * time.Hour
 	failUserFacing = "генерация не удалась"
+	// AAC/MP4 добавляет несколько сотых секунды служебного padding: исходник на
+	// 15.00с получается 15.02с по ffprobe. Genjutsu Lite всё равно берёт первые
+	// 15 секунд, поэтому такой файл не режем на две независимые генерации.
+	lightMaxSec = 15.1
 )
 
 type Generator struct {
@@ -76,7 +83,7 @@ func (g *Generator) worker(ctx context.Context) {
 			continue
 		}
 		if err := g.submit(ctx, order); err != nil {
-			g.log.Error("отправка в Genjutsu не удалась", "token", order.Token, "err", err)
+			g.log.Error("отправка в Genjutsu Lite не удалась", "token", order.Token, "err", err)
 			_ = g.orders.MarkFailed(ctx, order.Token, failUserFacing)
 		}
 	}
@@ -97,8 +104,30 @@ func (g *Generator) submit(ctx context.Context, o *model.Order) error {
 			time.Sleep(6 * time.Second)
 			_ = g.orders.MarkDone(context.WithoutCancel(ctx), o.Token, tpl.ClipURL)
 		}()
-		return g.orders.SetHFRequest(ctx, o.Token, "fake-"+o.Token)
+		return g.orders.SetHFRequest(ctx, o.Token, "fake-"+o.Token, 1)
 	}
+
+	if tpl.DurationSec <= lightMaxSec {
+		return g.submitPart(ctx, o, tpl, 1, g.store.PublicURL(tpl.ClipURL))
+	}
+
+	// Lite принимает максимум 15 секунд. Исходники у нас не длиннее 29.5,
+	// поэтому достаточно двух равных частей: каждая гарантированно короче лимита.
+	if err := g.prepareParts(ctx, o.Token, tpl); err != nil {
+		return err
+	}
+	url, err := g.store.PresignGet(ctx, sourcePartKey(o.Token, 1), presignTTL)
+	if err != nil {
+		return err
+	}
+	return g.submitPart(ctx, o, tpl, 1, url)
+}
+
+// submitPart загружает фотографии заново для каждой половины. Это сохраняет
+// простой и восстанавливаемый поток: после рестарта часть можно безопасно
+// отправить с тем же idempotency key.
+func (g *Generator) submitPart(ctx context.Context, o *model.Order, tpl *model.Template,
+	segment int, videoURL string) error {
 
 	// Фото клиента уезжают в хранилище Higgsfield — наш бакет остаётся приватным.
 	imageURLs := make([]string, 0, len(o.PhotoKeys))
@@ -119,20 +148,56 @@ func (g *Generator) submit(ctx context.Context, o *model.Order) error {
 		imageURLs = append(imageURLs, url)
 	}
 
-	sub, err := g.hf.Submit(ctx,
-		g.store.PublicURL(tpl.ClipURL), imageURLs, tpl.Prompt, o.Resolution,
-		o.Token, g.baseURL+"/webhooks/higgsfield/"+g.hookToken)
+	idempotencyKey := fmt.Sprintf("%s-r%d-s%d", o.Token, o.RetriesUsed, segment)
+	sub, err := g.hf.Submit(ctx, videoURL, imageURLs, tpl.Prompt, o.Resolution,
+		idempotencyKey, g.baseURL+"/webhooks/higgsfield/"+g.hookToken)
 	if err != nil {
 		return err
 	}
-	g.log.Info("задача поставлена", "token", o.Token, "request_id", sub.RequestID)
-	return g.orders.SetHFRequest(ctx, o.Token, sub.RequestID)
+	g.log.Info("задача поставлена", "token", o.Token, "часть", segment, "request_id", sub.RequestID)
+	return g.orders.SetHFRequest(ctx, o.Token, sub.RequestID, segment)
+}
+
+func sourcePartKey(token string, segment int) string {
+	return fmt.Sprintf("orders/%s/source-%d.mp4", token, segment)
+}
+
+func resultPartKey(token string, segment int) string {
+	return fmt.Sprintf("orders/%s/result-%d.mp4", token, segment)
+}
+
+// prepareParts один раз режет публичный шаблон и складывает обе половины рядом
+// с заказом. Повтор после сбоя просто перезапишет те же ключи.
+func (g *Generator) prepareParts(ctx context.Context, token string, tpl *model.Template) error {
+	tmp, err := os.MkdirTemp("", "genjutsu-parts")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmp)
+
+	source := filepath.Join(tmp, "source.mp4")
+	if err := g.objectToFile(ctx, tpl.ClipURL, source); err != nil {
+		return err
+	}
+	first, second := filepath.Join(tmp, "source-1.mp4"), filepath.Join(tmp, "source-2.mp4")
+	if err := media.SplitVideo(ctx, source, first, second, tpl.DurationSec/2); err != nil {
+		return err
+	}
+	if err := upload(ctx, g.store, first, sourcePartKey(token, 1), "video/mp4"); err != nil {
+		return err
+	}
+	return upload(ctx, g.store, second, sourcePartKey(token, 2), "video/mp4")
 }
 
 // Check — единственный путь, которым заказ уходит в done или failed.
 // Вызывается и вебхуком, и реконсилятором; вебхуку самому по себе не верим.
 func (g *Generator) Check(ctx context.Context, requestID string) error {
 	order, err := g.orders.ByHFRequest(ctx, requestID)
+	if errors.Is(err, repository.ErrNotFound) {
+		// Повторный вебхук от уже завершённой первой половины приходит после того,
+		// как hf_request_id переключился на вторую. Это уже обработанный сигнал.
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -165,12 +230,72 @@ func (g *Generator) Check(ctx context.Context, requestID string) error {
 		return g.orders.MarkFailed(ctx, order.Token, reason)
 	}
 
-	key := "orders/" + order.Token + "/result.mp4"
-	if err := g.copyToStore(ctx, res.Video, key); err != nil {
+	tpl, err := g.templates.GetAny(ctx, order.TemplateID)
+	if err != nil {
 		return err
 	}
+	if tpl.DurationSec > lightMaxSec && order.HFSegment > 0 {
+		key := resultPartKey(order.Token, order.HFSegment)
+		if err := g.copyToStore(ctx, res.Video, key); err != nil {
+			return err
+		}
+		if order.HFSegment == 1 {
+			url, err := g.store.PresignGet(ctx, sourcePartKey(order.Token, 2), presignTTL)
+			if err != nil {
+				return err
+			}
+			return g.submitPart(ctx, order, tpl, 2, url)
+		}
+		if err := g.joinParts(ctx, order.Token); err != nil {
+			return err
+		}
+	} else {
+		key := "orders/" + order.Token + "/result.mp4"
+		if err := g.copyToStore(ctx, res.Video, key); err != nil {
+			return err
+		}
+	}
 	g.log.Info("заказ готов", "token", order.Token)
-	return g.orders.MarkDone(ctx, order.Token, key)
+	return g.orders.MarkDone(ctx, order.Token, "orders/"+order.Token+"/result.mp4")
+}
+
+func (g *Generator) objectToFile(ctx context.Context, key, path string) error {
+	rc, err := g.store.Get(ctx, key)
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	_, copyErr := io.Copy(f, rc)
+	closeErr := f.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	return closeErr
+}
+
+func (g *Generator) joinParts(ctx context.Context, token string) error {
+	tmp, err := os.MkdirTemp("", "genjutsu-join")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmp)
+
+	first, second := filepath.Join(tmp, "result-1.mp4"), filepath.Join(tmp, "result-2.mp4")
+	if err := g.objectToFile(ctx, resultPartKey(token, 1), first); err != nil {
+		return err
+	}
+	if err := g.objectToFile(ctx, resultPartKey(token, 2), second); err != nil {
+		return err
+	}
+	joined := filepath.Join(tmp, "result.mp4")
+	if err := media.ConcatVideos(ctx, first, second, joined); err != nil {
+		return err
+	}
+	return upload(ctx, g.store, joined, "orders/"+token+"/result.mp4", "video/mp4")
 }
 
 // copyToStore перекладывает результат к нам: ссылки Higgsfield живут около

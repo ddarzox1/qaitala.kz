@@ -77,8 +77,8 @@ func gcd(a, b int) int {
 }
 
 // NormalizeVideo готовит один файл, который служит и превью на сайте, и
-// video_url для Genjutsu: H.264, длинная сторона не больше 1080, обрезка по
-// maxSec. На вход Genjutsu 4K бессмысленны — на выходе максимум 1080p.
+// video_url для Genjutsu Lite: H.264, длинная сторона не больше 1080, обрезка
+// по maxSec. На вход 4K бессмысленны — на выходе максимум 1080p.
 func NormalizeVideo(ctx context.Context, src, dst string, maxSec float64) error {
 	_, err := run(ctx, "ffmpeg", "-y", "-i", src,
 		"-t", strconv.FormatFloat(maxSec, 'f', 2, 64),
@@ -87,6 +87,66 @@ func NormalizeVideo(ctx context.Context, src, dst string, maxSec float64) error 
 		"-pix_fmt", "yuv420p", "-movflags", "+faststart",
 		"-c:a", "aac", "-b:a", "128k", dst)
 	return err
+}
+
+// SplitVideo делит нормализованный ролик точно в указанной точке. Перекодировка
+// нужна для покадрового разреза: stream copy привязал бы стык к ближайшему
+// ключевому кадру и мог потерять либо повторить несколько секунд.
+func SplitVideo(ctx context.Context, src, first, second string, atSec float64) error {
+	info, err := Probe(ctx, src)
+	if err != nil {
+		return err
+	}
+	if atSec < 4 || info.DurationSec-atSec < 4 {
+		return fmt.Errorf("точка разреза %.2fс оставляет часть короче 4 секунд", atSec)
+	}
+
+	encode := func(dst string, args ...string) error {
+		args = append(args,
+			"-map", "0:v:0", "-map", "0:a?",
+			"-c:v", "libx264", "-preset", "medium", "-crf", "18",
+			"-pix_fmt", "yuv420p", "-movflags", "+faststart",
+			"-c:a", "aac", "-b:a", "128k", dst)
+		_, err := run(ctx, "ffmpeg", args...)
+		return err
+	}
+	at := strconv.FormatFloat(atSec, 'f', 3, 64)
+	if err := encode(first, "-y", "-i", src, "-t", at); err != nil {
+		return fmt.Errorf("первая часть: %w", err)
+	}
+	if err := encode(second, "-y", "-i", src, "-ss", at); err != nil {
+		return fmt.Errorf("вторая часть: %w", err)
+	}
+	return nil
+}
+
+// ConcatVideos соединяет результаты двух последовательных генераций без
+// повторного пережатия. Оба файла пришли от одной модели с одинаковым quality,
+// поэтому их кодеки и геометрия должны совпадать.
+func ConcatVideos(ctx context.Context, first, second, dst string) error {
+	dir := filepath.Dir(dst)
+	list := filepath.Join(dir, "concat.txt")
+	content := "file '" + strings.ReplaceAll(first, "'", "'\\''") + "'\n" +
+		"file '" + strings.ReplaceAll(second, "'", "'\\''") + "'\n"
+	if err := os.WriteFile(list, []byte(content), 0o600); err != nil {
+		return err
+	}
+	_, err := run(ctx, "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list,
+		"-c", "copy", "-movflags", "+faststart", dst)
+	if err == nil {
+		return nil
+	}
+
+	// Если провайдер вернул части с разными параметрами кодека, stream copy не
+	// сработает. Один раз пережимаем склейку вместо того, чтобы навсегда оставить
+	// оплаченный заказ в generating.
+	_, retryErr := run(ctx, "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list,
+		"-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+		"-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", dst)
+	if retryErr != nil {
+		return fmt.Errorf("склейка частей: copy: %v; reencode: %w", err, retryErr)
+	}
+	return nil
 }
 
 // Poster вынимает кадр для карточки каталога. Первый кадр часто не отражает

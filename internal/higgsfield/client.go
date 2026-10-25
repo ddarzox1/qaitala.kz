@@ -1,4 +1,4 @@
-// Package higgsfield — клиент Genjutsu motion transfer.
+// Package higgsfield — клиент Genjutsu Lite motion transfer.
 package higgsfield
 
 import (
@@ -15,7 +15,7 @@ import (
 
 const (
 	apiBase     = "https://api.higgsfield.ai"
-	genjutsuURL = apiBase + "/higgsfield/genjutsu/motion-transfer/v1.0"
+	genjutsuURL = apiBase + "/higgsfield/genjutsu-light/motion-transfer/v1.0"
 
 	StatusQueued     = "queued"
 	StatusInProgress = "in_progress"
@@ -135,8 +135,9 @@ type Submitted struct {
 	StatusURL string `json:"status_url"`
 }
 
-// Submit ставит задачу в очередь Genjutsu. idempotencyKey — токен заказа:
-// повторная отправка того же заказа не создаёт второй платной генерации.
+// Submit ставит задачу в очередь Genjutsu Lite. idempotencyKey различает
+// заказ, бесплатный повтор и часть длинного ролика; повтор одного и того же
+// HTTP-запроса не создаёт вторую платную генерацию.
 func (c *Client) Submit(ctx context.Context, videoURL string, imageURLs []string,
 	prompt, resolution, idempotencyKey, webhookURL string) (*Submitted, error) {
 
