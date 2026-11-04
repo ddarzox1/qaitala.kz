@@ -2,38 +2,283 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>qaitala.kz — повтори тренд со своим лицом</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07070b">
+<title>qaitala.kz: повтори тренд со своим лицом</title>
+<meta name="description" content="Выбери готовый ролик, загрузи своё фото и получи свою версию видео. Без регистрации, оплата через Kaspi QR.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2317171A'/%3E%3Ctext x='15' y='23' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='20' fill='%23fff' text-anchor='middle'%3Eq%3C/text%3E%3Ccircle cx='24' cy='22' r='3' fill='%23D2FF3A'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&family=Unbounded:wght@600;700&display=swap&subset=cyrillic,cyrillic-ext" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@700&display=swap&subset=cyrillic,cyrillic-ext" rel="stylesheet">
 <style>
-html,body{margin:0;background:#F5F3EE;color:#17171A;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-*{box-sizing:border-box}
-button,input{font-family:inherit}
-a{color:#17171A;text-decoration:underline;text-underline-offset:3px}
-a:hover{color:#55554F}
-/* ponytail: style-hover/active/focus из .dc.html — обычным CSS, одно значение нажатия вместо трёх */
-.press:active{transform:scale(.98)}
-.card:hover .thumb{transform:translateY(-3px)}
-input:focus{border-color:#17171A}
-@keyframes kb{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.14) translate(-3%,-4%)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
-@keyframes popIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes scan{0%{top:-35%}100%{top:105%}}
-@keyframes slide{0%{left:-40%}100%{left:100%}}
-@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(210,255,58,0),0 30px 60px -20px rgba(23,23,26,.35)}50%{box-shadow:0 0 0 10px rgba(210,255,58,.35),0 30px 60px -20px rgba(23,23,26,.35)}}
-@keyframes play{from{width:0}to{width:100%}}
-@keyframes check{from{stroke-dashoffset:30}to{stroke-dashoffset:0}}
+/* Hallmark · shape: Index · genre: atmospheric · theme: brand · redesign: full
+ * paper: oklch(13% 0.010 286) · accent: oklch(93.6% 0.212 122) · display: Unbounded · body: Golos Text · hero: Index · nav: edge-aligned · footer: mast · signature: the catalogue at its real aspects, wide clips spanning two columns instead of being cropped
+ * axes: dark/display-heavy/chromatic-lime · posture: Restrained · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R5 V4 · weakest: P, a catalogue argues little; the argument taken is that a clip's real shape matters more than a tidy grid, so the wide clips span two columns and nothing is cropped */
+/* Hallmark · waive 77 · four sections (resume rail, Index hero, the page's own facts, footer mast), each with mass: the catalogue is 300px+ of video per card and the facts row carries three rows across ten columns · a redesign adds no content, and six sections would mean inventing claims this shop cannot make */
+/* Hallmark · waive 39b · controls are 52px primary and 44px secondary, but the catalogue cards render 280 to 570px tall · a card here is a video at its own aspect, not a control, and cropping it to control height would hide the product */
+/* Hallmark · answered F15 · the three order screens centre their column because each is one object the client is waiting on; the home page is left-aligned throughout */
+/* Hallmark · waive 44c · 44b passes: headline, sentence and the first catalogue row all sit above the 1280x800 fold · an Index hero puts the clips themselves on the first screen, so the head stops at 366px and the catalogue fills the rest of it */
+/* Hallmark · waive 79 · the 534px under the head is the first row of clips, thumbs measured 373px tall at 1440 · the catalogue begins exactly where the head ends, so there is no band to centre into */
+/* Hallmark · waive 83 · every picture is a frame of a clip this shop sells and the browser came to look through them · trimming the catalogue to a third of the page would hide half the stock */
+/* Hallmark · dismissed F7 · the pill selectors are the language control, its track, the resume action and the duration badge · F7 leaves the pill to controls, tags and badges */
+/* Hallmark · tokens and base live in this block, not in tokens.css and base.css · go:embed ships exactly one file and static.go serves it as a blob, so a second stylesheet would need a new route for no gain */
+
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --text-xs: 0.8125rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5625rem;
+  --text-display: clamp(2.25rem, 5vw + 0.5rem, 4.25rem); --text-section: clamp(1.75rem, 2.2vw + 1rem, 2.75rem);
+  --text-title: clamp(1.125rem, 0.6vw + 0.95rem, 1.5rem); --text-lead: clamp(1.0625rem, 0.35vw + 1rem, 1.25rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+
+  /* Бренд: лайм и кремовый перенесены как есть, нейтрали подкрашены в холодный тон бренда (hue 286). */
+  --color-paper: oklch(13% 0.010 286); --color-paper-2: oklch(18% 0.011 286); --color-paper-3: oklch(24% 0.012 286);
+  --color-ink: oklch(96% 0.007 89); --color-ink-2: oklch(76% 0.009 89); --color-muted: oklch(64% 0.010 89);
+  --color-rule: oklch(30% 0.012 286);
+  --color-accent: oklch(93.6% 0.212 122); --color-accent-ink: oklch(22% 0.050 122); --color-focus: oklch(90% 0.200 122);
+  --color-warn-field: oklch(27% 0.065 32); --color-warn-ink: oklch(85% 0.100 48);
+  --color-note-field: oklch(26% 0.055 122);
+  --color-kaspi: oklch(59% 0.221 26); /* чужой бренд, значение не трогаем */
+  --color-scrim: oklch(8% 0.010 286 / 0.62); --color-veil: oklch(8% 0.010 286 / 0.78);
+
+  --font-display: "Unbounded", "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Golos Text", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 10px; --radius-md: 16px; --radius-lg: 24px; --radius-pill: 999px; --rule-hair: 1px;
+  --tracking-display: -0.03em;
+  --container: 1440px; --gutter: 64px; --section-gap: 96px;
+  --nav-h: 64px; --control-h: 52px; --control-h-sm: 44px;
+  --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400;
+}
+@media (max-width: 60rem) { :root { --gutter: 24px; --section-gap: 72px; } }
+@media (max-width: 40rem) { :root { --gutter: 16px; --section-gap: 56px; --nav-h: 56px; } }
+
+/* ——— база ——— */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html { color-scheme: dark; scrollbar-color: var(--color-paper-3) var(--color-paper); }
+body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.55; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; caret-color: var(--color-accent); }
+::selection { background: color-mix(in oklab, var(--color-accent) 26%, transparent); color: var(--color-ink); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; font-weight: 700; font-synthesis: none; letter-spacing: var(--tracking-display); line-height: 1.06; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
+h1 { font-family: var(--font-display); font-size: var(--text-display); max-width: 15ch; }
+h2 { font-family: var(--font-display); font-size: var(--text-section); max-width: 24ch; }
+h3 { font-size: var(--text-title); line-height: 1.2; max-width: 40ch; }
+p { margin: 0; text-wrap: pretty; }
+img, video { display: block; max-width: 100%; }
+svg { display: block; }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.16em; }
+[hidden] { display: none !important; }
+.num { font-variant-numeric: tabular-nums; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes check { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+@keyframes track { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ——— каркас и шапка ——— */
+.shell { min-height: 100svh; display: flex; flex-direction: column; }
+.main { flex: 1; width: 100%; }
+.topbar { position: sticky; top: 0; z-index: var(--z-sticky-nav); background: color-mix(in oklab, var(--color-paper) 84%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: var(--rule-hair) solid var(--color-rule); padding-top: env(safe-area-inset-top); }
+.topbar__in { height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.brand { display: flex; align-items: baseline; gap: var(--space-3xs); font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg); letter-spacing: -.02em; cursor: pointer; white-space: nowrap; }
+.brand__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); }
+.brand__kz { font-family: var(--font-body); font-weight: 600; color: var(--color-muted); }
+.langs { display: flex; gap: var(--space-3xs); padding: var(--space-3xs); border-radius: var(--radius-pill); background: var(--color-paper-2); }
+.lang { min-height: var(--control-h-sm); padding-inline: var(--space-md); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; color: var(--color-ink-2); cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.lang:hover { color: var(--color-ink); }
+.lang[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); }
+
+/* ——— кнопки: один рецепт основной, один вторичной ——— */
+.btn { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: var(--control-h); padding-inline: var(--space-lg); border-radius: var(--radius-md); font-size: var(--text-md); font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
+.btn:active { transform: scale(.985); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn--primary { background: var(--color-accent); color: var(--color-accent-ink); }
+.btn--primary:hover:not(:disabled) { background: color-mix(in oklab, var(--color-accent) 86%, var(--color-ink)); }
+.btn--primary:focus-visible { outline-color: var(--color-ink); }
+.btn--ghost { background: var(--color-paper-2); color: var(--color-ink); }
+.btn--ghost:hover:not(:disabled) { background: var(--color-paper-3); }
+.btn--sm { min-height: var(--control-h-sm); padding-inline: var(--space-md); font-size: var(--text-sm); }
+.btn--wide { width: 100%; }
+.btn__label { position: relative; }
+.btn__price { position: relative; opacity: .72; }
+.btn__prog { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--pct, 0)); background: color-mix(in oklab, var(--color-accent-ink) 20%, transparent); transition: transform var(--dur-micro) linear; }
+
+/* ——— лента незакрытых заказов ——— */
+.resume { display: flex; gap: var(--space-sm); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-block: var(--space-md); padding-inline: var(--gutter); }
+.resume::-webkit-scrollbar { display: none; }
+.resume__item { flex: 0 0 min(20rem, 86%); scroll-snap-align: start; display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs); border-radius: var(--radius-md); background: var(--color-paper-2); color: var(--color-ink); cursor: pointer; text-align: left; animation: fadeUp var(--dur-long) var(--ease-out) both; transition: background-color var(--dur-micro) var(--ease-out); }
+.resume__item:hover { background: var(--color-paper-3); }
+.resume__thumb { width: 40px; height: 56px; flex: none; border-radius: var(--radius-sm); object-fit: cover; background: var(--color-paper-3); }
+.resume__body { flex: 1; min-width: 0; display: block; }
+.resume__ttl { display: block; font-size: var(--text-sm); font-weight: 600; }
+.resume__sub { display: block; font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume__go { flex: none; min-height: var(--control-h-sm); display: flex; align-items: center; padding-inline: var(--space-md); border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-accent-ink); font-size: var(--text-sm); font-weight: 600; }
+
+/* ——— Index: заголовок, затем каталог ——— */
+.masthead { padding-block: var(--space-xl) var(--space-lg); }
+.sec--grid { padding-bottom: 0; }
+.masthead__lead { margin-top: var(--space-md); font-size: var(--text-lead); color: var(--color-ink-2); max-width: 42ch; }
+.trust { margin-top: var(--space-lg); display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); font-size: var(--text-sm); color: var(--color-muted); }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); grid-auto-flow: row dense; align-items: start; }
+@media (min-width: 37.5rem) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg); } }
+@media (min-width: 68.75rem) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.card { display: block; width: 100%; text-align: left; cursor: pointer; border-radius: var(--radius-lg); animation: fadeUp var(--dur-long) var(--ease-out) both; }
+.card:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.card--wide { grid-column: span 2; }
+.thumb { position: relative; aspect-ratio: var(--ar, 0.5625); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-paper-2); }
+.thumb__img, .thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.thumb video { opacity: 0; transition: opacity var(--dur-short) var(--ease-out); }
+.badge { position: absolute; top: var(--space-sm); left: var(--space-sm); padding: var(--space-3xs) var(--space-xs); border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-accent-ink); font-size: var(--text-xs); font-weight: 600; }
+.dur { position: absolute; bottom: var(--space-sm); left: var(--space-sm); padding: var(--space-3xs) var(--space-xs); border-radius: var(--radius-pill); background: var(--color-scrim); color: var(--color-ink); font-size: var(--text-xs); }
+.card__name { margin-top: var(--space-sm); font-size: var(--text-md); font-weight: 600; }
+.card__price { margin-top: var(--space-3xs); font-size: var(--text-sm); color: var(--color-ink-2); }
+.skel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); }
+.skel__thumb { aspect-ratio: 0.5625; border-radius: var(--radius-lg); background: var(--color-paper-2); animation: pulse 1.4s var(--ease-in-out) infinite; }
+.skel__line { height: 12px; border-radius: var(--radius-sm); background: var(--color-paper-2); }
+/* Телефон показывает ролик как есть; от трёх колонок высоты карточек сводятся в один диапазон,
+   иначе сетка из 9:16 и 16:9 стоит в дырах. Настоящая пропорция видна на карточке шаблона. */
+@media (min-width: 37.5rem) {
+  .thumb { aspect-ratio: clamp(0.8, var(--ar, 0.5625), 1.6); }
+  /* Широкая карточка вдвое шире узкой, поэтому её диапазон вдвое больше: так строки встают вровень. */
+  .card--wide .thumb { aspect-ratio: clamp(1.55, var(--ar, 1.78), 1.75); }
+  .skel__thumb { aspect-ratio: 0.8; }
+}
+.empty { margin-top: var(--space-xl); color: var(--color-ink-2); }
+.reload { margin-top: var(--space-xl); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md); color: var(--color-ink-2); }
+
+/* ——— строки с фактами и подвал ——— */
+.facts { border-top: var(--rule-hair) solid var(--color-rule); }
+.fact { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); padding-block: var(--space-lg); border-bottom: var(--rule-hair) solid var(--color-rule); }
+@media (min-width: 48rem) { .fact { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-xl); align-items: baseline; } }
+.fact__t { font-size: var(--text-title); font-weight: 600; }
+.fact__d { color: var(--color-ink-2); }
+.foot { margin-top: var(--section-gap); padding-block: var(--space-xl) var(--space-2xl); }
+.foot__mark { font-family: var(--font-display); font-weight: 700; font-size: var(--text-section); letter-spacing: var(--tracking-display); }
+.foot__links { margin-top: var(--space-lg); display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-xl); font-size: var(--text-sm); color: var(--color-ink-2); }
+
+/* ——— карточка шаблона ——— */
+.detail { padding-block: var(--space-md) 0; animation: fade var(--dur-short) var(--ease-out) both; }
+.back { display: flex; align-items: center; gap: var(--space-2xs); min-height: var(--control-h-sm); margin-bottom: var(--space-sm); padding-right: var(--space-sm); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: 500; color: var(--color-ink-2); cursor: pointer; }
+.back:hover { color: var(--color-ink); }
+.detail__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
+@media (min-width: 56.25rem) { .detail__grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-2xl); align-items: start; } .detail__media { position: sticky; top: calc(var(--nav-h) + var(--space-md)); } }
+.player { width: 100%; aspect-ratio: var(--ar, 0.5625); object-fit: cover; border-radius: var(--radius-lg); background: var(--color-paper-2); }
+.detail__panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); align-content: start; min-width: 0; }
+.ttl { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
+.ttl h1 { font-size: var(--text-section); max-width: 18ch; }
+.price { font-size: var(--text-title); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.desc { margin-top: var(--space-xs); color: var(--color-ink-2); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-md); }
+.chip { padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-pill); background: var(--color-paper-2); font-size: var(--text-sm); color: var(--color-ink-2); }
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); }
+.field__label { font-size: var(--text-sm); color: var(--color-muted); }
+.segs { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: var(--space-xs); }
+.seg { display: grid; gap: var(--space-3xs); align-content: center; min-height: var(--control-h); padding: var(--space-xs); border-radius: var(--radius-md); background: var(--color-paper-2); color: var(--color-ink); cursor: pointer; text-align: center; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.seg:hover { background: var(--color-paper-3); }
+.seg[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); }
+.seg__px { font-weight: 600; }
+.seg__price { font-size: var(--text-sm); color: var(--color-muted); }
+.seg[aria-pressed="true"] .seg__price { color: var(--color-paper-3); }
+.slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+@media (min-width: 30rem) { .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.slot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); padding: var(--space-xs); border-radius: var(--radius-md); background: var(--color-paper-2); color: var(--color-ink); cursor: pointer; text-align: left; transition: background-color var(--dur-micro) var(--ease-out); }
+.slot:hover { background: var(--color-paper-3); }
+.slot--empty { background: none; box-shadow: inset 0 0 0 1px var(--color-rule); }
+.slot--empty:hover { background: var(--color-paper-2); }
+.slot__pic { position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; background: var(--color-paper-3); display: grid; place-items: center; }
+.slot__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.slot__tick { position: absolute; right: var(--space-2xs); bottom: var(--space-2xs); width: 20px; height: 20px; border-radius: 50%; background: var(--color-accent); display: grid; place-items: center; animation: popIn var(--dur-short) var(--ease-out) both; }
+.slot__ttl { display: block; font-size: var(--text-sm); font-weight: 600; overflow-wrap: break-word; }
+.slot__sub { display: block; font-size: var(--text-xs); color: var(--color-muted); }
+.alert { display: flex; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); background: var(--color-warn-field); color: var(--color-warn-ink); font-size: var(--text-sm); animation: fadeUp var(--dur-short) var(--ease-out) both; }
+.note { padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); background: var(--color-note-field); font-size: var(--text-sm); }
+.dock { position: sticky; bottom: 0; padding-block: var(--space-md); padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom)); background: var(--color-paper); }
+/* Непрозрачная полоса, над ней короткая растушёвка: иначе слоты просвечивают сквозь кнопку. */
+.dock::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: var(--space-lg); background: linear-gradient(180deg, transparent, var(--color-paper)); pointer-events: none; }
+.dock__note { margin-top: var(--space-sm); text-align: center; font-size: var(--text-sm); color: var(--color-muted); }
+
+/* ——— ожидание, результат, отказ ——— */
+.stage { max-width: 30rem; margin-inline: auto; padding-block: var(--space-xl) var(--space-2xl); display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: var(--space-lg); animation: fade var(--dur-long) var(--ease-out) both; }
+.stage h1 { font-size: var(--text-section); max-width: 18ch; }
+.stage__note { color: var(--color-ink-2); max-width: 34ch; }
+.genframe { position: relative; width: 100%; max-width: 20rem; aspect-ratio: var(--ar, 0.5625); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-paper-2); }
+.genframe__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.genframe__veil { position: absolute; inset: 0; background: var(--color-veil); }
+.genframe__face { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; translate: -50% -50%; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--color-ink); }
+.genstep { min-height: 1.5rem; font-weight: 500; }
+.genbar { position: relative; width: 11.25rem; height: 4px; border-radius: var(--radius-sm); background: var(--color-paper-3); overflow: hidden; }
+.genbar__fill { position: absolute; inset-block: 0; left: 0; width: 38%; border-radius: var(--radius-sm); background: var(--color-accent); animation: track 1.6s var(--ease-in-out) infinite; }
+.linkbox { width: 100%; display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm); padding-left: var(--space-md); border-radius: var(--radius-md); background: var(--color-paper-2); text-align: left; }
+.linkbox__body { flex: 1; min-width: 0; display: block; }
+.linkbox__label { display: block; font-size: var(--text-sm); color: var(--color-muted); }
+.linkbox__value { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ready { display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 32px; padding-inline: var(--space-sm); border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-accent-ink); font-size: var(--text-sm); font-weight: 600; animation: popIn var(--dur-long) var(--ease-out) both; }
+.result__video { width: 100%; max-width: 20rem; aspect-ratio: var(--ar, 0.5625); object-fit: cover; border-radius: var(--radius-lg); background: var(--color-paper-2); }
+.actions { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); }
+.actions__pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+.keepnote { font-size: var(--text-sm); color: var(--color-muted); }
+.facemark { width: 56px; height: 56px; border-radius: 50%; background: var(--color-paper-2); display: grid; place-items: center; }
+
+/* ——— шит оплаты ——— */
+.scrim { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--color-veil); display: flex; justify-content: center; align-items: flex-end; animation: fade var(--dur-short) var(--ease-out) both; }
+.sheet { width: 100%; max-width: 27.5rem; max-height: 92svh; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); background: var(--color-paper-2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-sm) var(--space-lg); padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom)); animation: sheetUp var(--dur-long) var(--ease-out) both; }
+@media (min-width: 47.5rem) { .scrim { align-items: center; padding: var(--space-lg); } .sheet { border-radius: var(--radius-lg); animation-name: popIn; animation-duration: var(--dur-short); } }
+.sheet__grab { width: 40px; height: 4px; border-radius: var(--radius-sm); background: var(--color-paper-3); margin-inline: auto; }
+@media (min-width: 47.5rem) { .sheet__grab { display: none; } }
+.sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.sheet__ttl { font-size: var(--text-title); font-weight: 700; }
+.sheet__close { width: var(--control-h-sm); height: var(--control-h-sm); border-radius: 50%; background: var(--color-paper-3); display: grid; place-items: center; cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out); }
+.sheet__close:hover { background: var(--color-rule); }
+.sheet__item { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm); border-radius: var(--radius-md); background: var(--color-paper-3); }
+.sheet__poster { width: 44px; height: 60px; flex: none; border-radius: var(--radius-sm); object-fit: cover; background: var(--color-paper-2); }
+.sheet__meta { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-3xs); font-size: var(--text-sm); color: var(--color-muted); }
+.sheet__face { width: 40px; height: 40px; flex: none; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--color-paper-3); }
+.sheet__total { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-md); }
+.sheet__sum { font-size: var(--text-xl); font-weight: 700; letter-spacing: var(--tracking-display); font-variant-numeric: tabular-nums; }
+.sheet__hint { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-muted); }
+.input { width: 100%; min-height: var(--control-h); padding-inline: var(--space-md); border-radius: var(--radius-md); background: var(--color-paper); border: 1px solid var(--color-muted); font-size: 1rem; }
+.input::placeholder { color: var(--color-muted); }
+.waitbtn { display: flex; align-items: center; justify-content: center; gap: var(--space-sm); min-height: var(--control-h); border-radius: var(--radius-md); background: var(--color-paper-3); font-weight: 600; }
+.kaspi { width: 18px; height: 18px; flex: none; border-radius: var(--space-2xs); background: var(--color-kaspi); }
+.sheet__legal { display: flex; align-items: center; justify-content: center; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-muted); text-align: center; }
+.spinner { width: 18px; height: 18px; flex: none; border-radius: 50%; border: 2.5px solid var(--color-paper); border-top-color: var(--color-accent-ink); animation: spin .8s linear infinite; }
+.spinner--light { border-color: var(--color-rule); border-top-color: var(--color-ink); }
+
+/* ——— скрытый выбор файла и страница без скриптов ——— */
+.filepick { display: none; }
+.noscript { max-width: 34rem; margin-inline: auto; padding: var(--space-2xl) var(--gutter); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); }
+.noscript p { color: var(--color-ink-2); }
+.foot__mark .brand__dot, .noscript .brand__dot { display: inline-block; margin-inline: var(--space-3xs); }
+
+/* ——— секции ——— */
+.sec { padding-block: 0; }
+.sec--facts { padding-block: var(--section-gap) 0; }
 </style>
 </head>
 <body>
 <div id="app"></div>
+<noscript>
+  <div class="noscript">
+    <div class="foot__mark">qaitala<span class="brand__dot"></span>kz</div>
+    <p>Выбери готовый ролик, загрузи своё фото и получи свою версию видео. Для этого нужен включённый JavaScript.</p>
+    <p><a href="https://wa.me/77064484218">Вопросы? Напиши в WhatsApp</a></p>
+  </div>
+</noscript>
 <script src="https://unpkg.com/preact@10.25.4/dist/preact.umd.js"></script>
 <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
 <script>
@@ -59,30 +304,40 @@ const fmt = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₸';
 const RES = ['480p', '720p', '1080p'];
 
 const T = {
-  ru: { headlines:['Повтори тренд со своим лицом', 'Без регистрации — оплата через Kaspi QR', 'Получи 10 000 просмотров', 'Получи 100 000 просмотров', 'Получи 1 000 000 просмотров'], sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', back:'Все видео', sec:'сек', trust:'Без регистрации и подписки', help:'Вопросы? Напиши в WhatsApp', open:'Открыть',
+  ru: { h1:'Повтори тренд со своим лицом', sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', back:'Все видео', sec:'сек', photos:'фото', trust:'Без регистрации и подписки', kaspi:'Оплата через Kaspi QR', help:'Вопросы? Напиши в WhatsApp', open:'Открыть', close:'Закрыть',
     empty:'Пока ничего нет. Загляни позже.', loadErr:'Не удалось загрузить каталог', retryLoad:'Повторить',
     resumeGen:'Твоё видео создаётся', resumeDone:'Твоё видео готово', resumeFail:'Нужно другое фото',
     quality:'Качество', slotHint:'Лицо крупно, хороший свет', added:'Фото добавлено', replace:'Заменить',
     uploadErr:'Это не похоже на фото. Подойдёт JPG, PNG или HEIC.', retryNote:'Повтор бесплатный — оплата уже засчитана.',
-    ctaUpload:'Загрузить фото', ctaUploadMore:'Загрузить ещё фото', ctaCreate:'Создать за', ctaRetry:'Создать заново · бесплатно', sending:'Загружаем',
+    ctaUpload:'Загрузить фото', ctaUploadMore:'Загрузить ещё фото', ctaCreate:'Создать за', ctaRetry:'Создать заново', free:'бесплатно', sending:'Загружаем',
     payTitle:'Оплата', total:'К оплате', oneTime:'Разовый платёж, без подписки', emailLabel:'Email для ссылки на видео', optional:'необязательно',
     pay:'Оплатить', opening:'Открываем Kaspi', payFail:'Не получилось начать оплату. Попробуй ещё раз.', afterPay:'Начнём создавать видео сразу после оплаты', waitPay:'Ждём оплату в Kaspi', reopen:'Открыть Kaspi ещё раз',
-    genTitle:'Создаём твоё видео', genNote:'Можешь оставить страницу открытой или вернуться позже', usually:'обычно 2–3 минуты', steps:['Изучаем фото','Ставим свет','Собираем кадры','Добавляем движение','Финальные штрихи'],
+    genTitle:'Создаём твоё видео', genNote:'Можешь оставить страницу открытой или вернуться позже', usually:'Обычно 2–3 минуты', steps:['Изучаем фото','Ставим свет','Собираем кадры','Добавляем движение','Финальные штрихи'],
     orderLink:'Ссылка на твой заказ', copy:'Копировать', copied:'Скопировано',
     ready:'Готово', download:'Скачать видео', share:'Поделиться', more:'Создать ещё', keep:'Видео доступно по ссылке 30 дней',
-    failTitle:'С этим фото не получилось', failText:'Так бывает, если лицо плохо видно или в кадре несколько людей. Загрузи другое фото — повтор бесплатный.', retry:'Загрузить другое фото', refund:'Вернуть деньги', refundNote:'Заявка принята. Деньги вернутся на карту в течение 1–3 дней.', refundDone:'Деньги возвращены на карту Kaspi.', refundTitle:'Возвращаем деньги', resumeRefund:'Возврат оформлен', home:'На главную' },
-  kz: { headlines:['Трендті өз бетіңмен қайтала', 'Тіркелусіз — Kaspi QR арқылы төле', '10 000 қаралым ал', '100 000 қаралым ал', '1 000 000 қаралым ал'], sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', trust:'Тіркелусіз және жазылымсыз', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу',
+    failTitle:'С этим фото не получилось', failText:'Так бывает, если лицо плохо видно или в кадре несколько людей. Загрузи другое фото — повтор бесплатный.', retry:'Загрузить другое фото', refund:'Вернуть деньги', refundNote:'Заявка принята. Деньги вернутся на карту в течение 1–3 дней.', refundDone:'Деньги возвращены на карту Kaspi.', refundTitle:'Возвращаем деньги', resumeRefund:'Возврат оформлен', home:'На главную',
+    facts:[
+      { t:'Без регистрации и подписки', d:'Разовый платёж, без подписки.' },
+      { t:'Оплата через Kaspi QR', d:'Начнём создавать видео сразу после оплаты.' },
+      { t:'Обычно 2–3 минуты', d:'Видео доступно по ссылке 30 дней.' },
+    ] },
+  kz: { h1:'Трендті өз бетіңмен қайтала', sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', photos:'фото', trust:'Тіркелусіз және жазылымсыз', kaspi:'Kaspi QR арқылы төлем', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу', close:'Жабу',
     empty:'Әзірге ештеңе жоқ. Кейінірек кіріп шық.', loadErr:'Каталогты жүктеу мүмкін болмады', retryLoad:'Қайталау',
     resumeGen:'Видеоң жасалып жатыр', resumeDone:'Видеоң дайын', resumeFail:'Басқа фото керек',
     quality:'Сапасы', slotHint:'Бет анық, жарық жақсы', added:'Фото қосылды', replace:'Ауыстыру',
     uploadErr:'Бұл фото емес сияқты. JPG, PNG немесе HEIC келеді.', retryNote:'Қайталау тегін — төлем есептелді.',
-    ctaUpload:'Фото жүктеу', ctaUploadMore:'Тағы фото жүктеу', ctaCreate:'Жасау ·', ctaRetry:'Қайта жасау · тегін', sending:'Жүктеп жатырмыз',
+    ctaUpload:'Фото жүктеу', ctaUploadMore:'Тағы фото жүктеу', ctaCreate:'Жасау', ctaRetry:'Қайта жасау', free:'тегін', sending:'Жүктеп жатырмыз',
     payTitle:'Төлем', total:'Төленетін сома', oneTime:'Бір реттік төлем, жазылымсыз', emailLabel:'Видео сілтемесі үшін email', optional:'міндетті емес',
     pay:'Төлеу', opening:'Kaspi ашылуда', payFail:'Төлемді бастау мүмкін болмады. Қайта көр.', afterPay:'Видеоны төлемнен кейін бірден жасай бастаймыз', waitPay:'Kaspi-дегі төлемді күтіп жатырмыз', reopen:'Kaspi-ді қайта ашу',
-    genTitle:'Видеоңды жасап жатырмыз', genNote:'Бетті ашық қалдыруға немесе кейін оралуға болады', usually:'әдетте 2–3 минут', steps:['Фотоны зерттеп жатырмыз','Жарық қойып жатырмыз','Кадрларды жинап жатырмыз','Қозғалыс қосып жатырмыз','Соңғы штрихтар'],
+    genTitle:'Видеоңды жасап жатырмыз', genNote:'Бетті ашық қалдыруға немесе кейін оралуға болады', usually:'Әдетте 2–3 минут', steps:['Фотоны зерттеп жатырмыз','Жарық қойып жатырмыз','Кадрларды жинап жатырмыз','Қозғалыс қосып жатырмыз','Соңғы штрихтар'],
     orderLink:'Тапсырысыңның сілтемесі', copy:'Көшіру', copied:'Көшірілді',
     ready:'Дайын', download:'Видеоны жүктеу', share:'Бөлісу', more:'Тағы жасау', keep:'Видео сілтеме арқылы 30 күн қолжетімді',
-    failTitle:'Бұл фотомен шықпады', failText:'Бет анық көрінбесе немесе кадрда бірнеше адам болса, солай болады. Басқа фото жүкте — қайталау тегін.', retry:'Басқа фото жүктеу', refund:'Ақшаны қайтару', refundNote:'Өтініш қабылданды. Ақша 1–3 күн ішінде картаңа қайтады.', refundDone:'Ақша Kaspi картаңа қайтарылды.', refundTitle:'Ақшаны қайтарып жатырмыз', resumeRefund:'Қайтару рәсімделді', home:'Басты бетке' },
+    failTitle:'Бұл фотомен шықпады', failText:'Бет анық көрінбесе немесе кадрда бірнеше адам болса, солай болады. Басқа фото жүкте — қайталау тегін.', retry:'Басқа фото жүктеу', refund:'Ақшаны қайтару', refundNote:'Өтініш қабылданды. Ақша 1–3 күн ішінде картаңа қайтады.', refundDone:'Ақша Kaspi картаңа қайтарылды.', refundTitle:'Ақшаны қайтарып жатырмыз', resumeRefund:'Қайтару рәсімделді', home:'Басты бетке',
+    facts:[
+      { t:'Тіркелусіз және жазылымсыз', d:'Бір реттік төлем, жазылымсыз.' },
+      { t:'Kaspi QR арқылы төлем', d:'Видеоны төлемнен кейін бірден жасай бастаймыз.' },
+      { t:'Әдетте 2–3 минут', d:'Видео сілтеме арқылы 30 күн қолжетімді.' },
+    ] },
 };
 
 // ——— API ———————————————————————————————————————————————————————————————
@@ -144,39 +399,40 @@ function stopCard(video) {
 
 const cardVideos = () => document.querySelectorAll('.card .thumb video');
 
+// Один набор иконок, все цвета — currentColor: цвет задаёт родитель через токен.
+const svg = (w, body, extra) => html`<svg width=${w} height=${w} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width=${(extra && extra.sw) || 2} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+  style=${(extra && extra.style) || ''}>${body}</svg>`;
+
 const ICON = {
-  back: html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`,
-  mute: html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>`,
-  plus: html`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
-  tick: html`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>`,
-  warn: html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>`,
-  face: html`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>`,
-  close: html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
-  creditCard: html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/></svg>`,
-  lock: html`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`,
-  download: html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D2FF3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>`,
-  dlDone: html`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D2FF3A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>`,
-  share: html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg>`,
-  play: html`<svg width="24" height="24" viewBox="0 0 24 24" fill="#17171A"><path d="M8 5v14l11-7z"/></svg>`,
-  checkAnim: html`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" stroke-dasharray="30" style="animation:check .5s .2s ease both"/></svg>`,
-  payDone: html`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" stroke-dasharray="30" style="animation:check .4s ease both"/></svg>`,
+  back: svg(18, html`<path d="M15 18l-6-6 6-6"/>`),
+  plus: svg(22, html`<path d="M12 5v14M5 12h14"/>`, { sw: 1.8 }),
+  tick: svg(12, html`<path d="M5 12l5 5L20 7"/>`, { sw: 3 }),
+  warn: svg(18, html`<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>`, { style: 'flex:none; margin-top:1px' }),
+  face: svg(26, html`<circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>`),
+  close: svg(16, html`<path d="M6 6l12 12M18 6L6 18"/>`, { sw: 2.2 }),
+  lock: svg(13, html`<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>`, { sw: 2.2 }),
+  download: svg(20, html`<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>`, { sw: 2.2 }),
+  share: svg(18, html`<path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5"/>`),
+  checkAnim: svg(14, html`<path d="M5 12l5 5L20 7" stroke-dasharray="30" style="animation:check .5s .2s var(--ease-out) both"/>`, { sw: 3 }),
 };
-const spinner = (border, top) => html`<span style="width:18px; height:18px; border-radius:50%; border:2.5px solid ${border}; border-top-color:${top}; animation:spin .8s linear infinite"></span>`;
 
 
 class App extends Component {
   fileRef = createRef();
+  sheetRef = createRef();
   state = {
     screen:'home', tplId:'', lang:'ru', resolution:'', photos:[], uploadError:'',
     sheet:null, email:'', step:0, copied:false, playing:true, shared:false, isDesk:false,
-    loading:true, loadError:'', templates:[], order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false, hl:0,
+    loading:true, loadError:'', templates:[], order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false,
   };
 
   componentDidMount() {
     this.onResize = () => this.setState({ isDesk: window.innerWidth >= 760 });
     this.onResize(); window.addEventListener('resize', this.onResize);
     this.loadTemplates();
-    this.hlI = setInterval(() => this.setState(s => ({ hl:s.hl + 1 })), 2800);
+    this.onKey = e => { if (e.key === 'Escape') this.closeSheet(); };
+    window.addEventListener('keydown', this.onKey);
 
     const token = tokenFromPath();
     if (token) { saveToken(token); this.loadOrder(token); }
@@ -187,12 +443,28 @@ class App extends Component {
     if (prev.templates !== st.templates || prev.screen !== st.screen || prev.isDesk !== st.isDesk) {
       this.syncPreviews();
     }
+    // Фокус уходит в шит и возвращается туда, откуда пришёл; остальное делает inert.
+    if (!prev.sheet && st.sheet) {
+      if (!this.lastFocus || this.lastFocus === document.body) this.lastFocus = document.activeElement;
+      if (this.sheetRef.current) this.sheetRef.current.focus();
+    } else if (prev.sheet && !st.sheet && this.lastFocus) {
+      try { this.lastFocus.focus(); } catch (e) {}
+      this.lastFocus = null;
+    }
   }
   componentWillUnmount() {
     window.removeEventListener('resize', this.onResize);
-    this.stopTimers(); this.stopPreviews(); clearInterval(this.hlI);
+    window.removeEventListener('keydown', this.onKey);
+    this.stopTimers(); this.stopPreviews();
   }
   stopTimers() { clearInterval(this.stepI); clearInterval(this.pollI); }
+
+  closeSheet() {
+    const s = this.state;
+    if (!s.sheet || s.sheet === 'busy') return;
+    if (s.sheet === 'wait') this.stopTimers();
+    this.setState({ sheet:null });
+  }
 
   // Десктоп: превью запускает наведение.
   hoverIn(thumb) {
@@ -318,6 +590,7 @@ class App extends Component {
   // ничего нет, и передумавший клиент не оставляет мусора.
   async submit() {
     const s = this.state, t = this.tpl();
+    this.lastFocus = document.activeElement; // кнопку сейчас заблокируют, фокус с неё слетит
     const form = new FormData();
     form.append('template_id', t.id);
     form.append('resolution', s.resolution);
@@ -399,8 +672,6 @@ class App extends Component {
       return { i, has:!!p, url: p ? p.url : '',
         title: (cur.slot_labels && cur.slot_labels[i]) || L.slotHint,
         sub: p ? L.added : L.slotHint,
-        bg: p ? '#fff' : 'rgba(255,255,255,.5)',
-        border: p ? '1px solid rgba(23,23,26,.08)' : '1.5px dashed rgba(23,23,26,.22)',
         pick:() => this.pick(i) };
     }) : [];
 
@@ -421,7 +692,8 @@ class App extends Component {
     const orderUrl = o ? location.host + '/o/' + o.token : '';
 
     return {
-      t:L, cur, slots, o, headline:L.headlines[s.hl % L.headlines.length],
+      t:L, cur, slots, o, facts:L.facts,
+      helpHref: 'https://wa.me/77064484218' + (savedTokens().length ? '?text=' + encodeURIComponent('ID: ' + savedTokens().map(t => t.slice(0, 8)).join(', ')) : ''),
       lang:s.lang, setLang: lang => this.setState({ lang }, () => this.loadTemplates()),
       goHome:() => { this.stopTimers(); this.setState({ screen:'home', sheet:null, photos:[] }); this.loadOrders(); window.scrollTo(0,0); },
       isHome:s.screen === 'home', isDetail:s.screen === 'detail', isGen:s.screen === 'gen',
@@ -440,15 +712,12 @@ class App extends Component {
         pick:() => this.setState({ resolution:r }),
       })) : [],
 
-      uploadError:s.uploadError, busy:s.busy, pct:`${Math.round(s.pct * 100)}%`,
-      ctaLabel, ctaPrice, onCta, ctaOpacity: s.busy ? .55 : 1,
+      uploadError:s.uploadError, busy:s.busy, pctNum:s.pct,
+      ctaLabel, ctaPrice, onCta,
       priceStr: price != null ? fmt(price) : '',
       canRetryFree: !!o && o.can_retry && s.screen === 'detail',
 
-      sheetOpen:!!s.sheet, sheetAlign: s.isDesk ? 'center' : 'flex-end', sheetPad: s.isDesk ? '24px' : '0',
-      sheetRadius: s.isDesk ? '28px' : '28px 28px 0 0',
-      sheetAnim: s.isDesk ? 'popIn .3s ease both' : 'sheetUp .38s cubic-bezier(.2,.9,.3,1) both',
-      closeSheet:() => { if (s.sheet === 'busy') return; if (s.sheet === 'wait') this.stopTimers(); this.setState({ sheet:null }); },
+      sheetOpen:!!s.sheet, closeSheet:() => this.closeSheet(),
       stop: e => e.stopPropagation(),
       email:s.email, onEmail: e => this.setState({ email:e.target.value }),
       payFailed:s.sheet === 'failed', payBusy:s.sheet === 'busy', payWait:s.sheet === 'wait', payUrl:s.payUrl, pay:() => this.pay(),
@@ -477,119 +746,144 @@ class App extends Component {
     };
   }
 
+  card(v, item, i) {
+    const wide = item.aspect_w > item.aspect_h;
+    const low = offered(item);
+    return html`
+      <button key=${item.id} onClick=${() => this.open(item)} class=${'card' + (wide ? ' card--wide' : '')}
+        style=${`--ar:${(item.aspect_w / item.aspect_h).toFixed(4)}; animation-delay:${Math.min(i, 7) * 40}ms`}>
+        <div class="thumb" onMouseEnter=${e => this.hoverIn(e.currentTarget)} onMouseLeave=${e => this.hoverOut(e.currentTarget)}>
+          ${item.poster_url && html`<img class="thumb__img" src=${item.poster_url} alt=""
+            loading=${i < 4 ? 'eager' : 'lazy'} fetchpriority=${i === 0 ? 'high' : 'auto'} decoding="async" />`}
+          <video data-src=${item.clip_url} poster=${item.poster_url} muted loop playsinline preload="none"
+            onTimeUpdate=${e => { if (e.currentTarget.currentTime > PREVIEW_LOOP_SEC) e.currentTarget.currentTime = 0; }}></video>
+          ${item.popular && html`<span class="badge">${v.t.popular}</span>`}
+          <span class="dur num">${Math.round(item.duration_sec)} ${v.t.sec}</span>
+        </div>
+        <div class="card__name">${item.name}</div>
+        <div class="card__price num">${low.length ? fmt(Math.min(...low.map(r => priceOf(item, r)))) : ''}</div>
+      </button>`;
+  }
+
   home(v) {
-    return html`<div style="max-width:1200px; margin:0 auto; padding:22px 16px 40px">
+    return html`<div>
       ${v.myOrders.length > 0 && html`
-        <div style="display:flex; gap:10px; overflow-x:auto; margin:0 -16px 18px; padding:0 16px; scroll-snap-type:x mandatory; scrollbar-width:none">
+        <div class="resume">
           ${v.myOrders.map(m => html`
-            <button key=${m.token} onClick=${m.open} class="press" style="flex:${v.myOrders.length > 1 ? '0 0 min(300px, 82%)' : '1 0 100%'}; scroll-snap-align:start; border:0; cursor:pointer; display:flex; align-items:center; gap:12px; padding:10px 12px 10px 10px; border-radius:18px; background:#17171A; color:#fff; text-align:left; animation:fadeUp .4s ease both">
-              <div style="width:36px; height:64px; border-radius:8px; flex:none; background:#2C2C30 center/cover url(${m.tpl ? m.tpl.poster_url : ''})"></div>
-              <div style="flex:1; min-width:0">
-                <div style="font-size:15px; font-weight:600">${m.title}</div>
-                <div style="font-size:13px; color:#B9B8B2; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${m.tpl ? m.tpl.name : ''}</div>
-              </div>
-              <span style="height:36px; padding:0 14px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:14px; font-weight:600; display:flex; align-items:center">${v.t.open}</span>
+            <button key=${m.token} onClick=${m.open} class="resume__item">
+              ${m.tpl && m.tpl.poster_url && html`<img class="resume__thumb" src=${m.tpl.poster_url} alt="" loading="lazy" />`}
+              <span class="resume__body">
+                <span class="resume__ttl">${m.title}</span>
+                <span class="resume__sub">${m.tpl ? m.tpl.name : ''}</span>
+              </span>
+              <span class="resume__go">${v.t.open}</span>
             </button>`)}
         </div>`}
-      <h1 style="margin:0; font-weight:800; font-size:clamp(30px, 7.6vw, 60px); line-height:1.08; letter-spacing:-.035em; text-wrap:balance; max-width:760px; min-height:2.16em"><span key=${v.headline} style="display:inline-block; animation:fadeUp .5s ease both">${v.headline}</span></h1>
-      <p style="margin:12px 0 0; font-size:17px; line-height:1.45; color:#5F5E59; max-width:440px; text-wrap:pretty">${v.t.sub}</p>
 
-      ${v.loadError
-        ? html`<div style="margin-top:28px; display:flex; align-items:center; gap:12px; font-size:15px; color:#5F5E59">
-            <span>${v.t.loadErr}</span>
-            <button onClick=${v.reload} style="height:36px; padding:0 14px; border-radius:999px; border:1px solid rgba(23,23,26,.14); background:#fff; cursor:pointer; font-size:14px; font-weight:600">${v.t.retryLoad}</button>
-          </div>`
-        : html`<div style="margin-top:24px; columns:165px; column-gap:12px">
-          ${v.loading
-            ? [1,2,3,4,5,6].map(i => html`<div key=${i} style="break-inside:avoid; margin-bottom:20px">
-                <div style="aspect-ratio:9/16; border-radius:20px; background:#E7E4DC; animation:pulse 1.4s ease-in-out infinite"></div>
-                <div style="height:14px; width:70%; margin-top:12px; border-radius:6px; background:#E7E4DC"></div>
-                <div style="height:12px; width:40%; margin-top:8px; border-radius:6px; background:#E7E4DC"></div>
-              </div>`)
-            : v.templates.map(item => html`
-              <button key=${item.id} onClick=${() => this.open(item)} class="card press" style="all:unset; cursor:pointer; display:block; width:100%; break-inside:avoid; margin-bottom:20px; animation:fadeUp .5s ease both">
-                <div class="thumb" onMouseEnter=${e => this.hoverIn(e.currentTarget)} onMouseLeave=${e => this.hoverOut(e.currentTarget)} style="position:relative; aspect-ratio:${ar(item)}; border-radius:20px; overflow:hidden; background:#E7E4DC center/cover url(${item.poster_url}); box-shadow:0 1px 0 rgba(23,23,26,.04), 0 14px 30px -18px rgba(23,23,26,.45); transition:transform .25s ease">
-                  <video data-src=${item.clip_url} muted loop playsinline preload="none"
-                    onTimeUpdate=${e => { if (e.currentTarget.currentTime > PREVIEW_LOOP_SEC) e.currentTarget.currentTime = 0; }}
-                    style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .35s"></video>
-                  <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 62%, rgba(0,0,0,.28))"></div>
-                  ${item.popular && html`<span style="position:absolute; top:10px; left:10px; height:24px; padding:0 9px; border-radius:999px; background:#D2FF3A; color:#17171A; font-size:12px; font-weight:600; display:flex; align-items:center">${v.t.popular}</span>`}
-                  <span style="position:absolute; bottom:10px; left:10px; height:22px; padding:0 8px; border-radius:999px; background:rgba(0,0,0,.35); backdrop-filter:blur(6px); color:#fff; font-size:11px; font-weight:500; display:flex; align-items:center; gap:5px"><span style="width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.6s infinite"></span>${Math.round(item.duration_sec)} ${v.t.sec}</span>
-                </div>
-                <div style="margin-top:10px; padding:0 2px">
-                  <div style="font-size:15px; font-weight:600; letter-spacing:-.01em">${item.name}</div>
-                  <div style="font-size:14px; color:#5F5E59; margin-top:2px">${offered(item).length ? fmt(Math.min(...offered(item).map(r => priceOf(item, r)))) : ''}</div>
-                </div>
-              </button>`)}
-        </div>`}
-      ${!v.loading && !v.loadError && !v.templates.length && html`<p style="margin-top:28px; font-size:15px; color:#5F5E59">${v.t.empty}</p>`}
+      <section class="sec sec--head">
+        <div class="container masthead">
+          <h1>${v.t.h1}</h1>
+          <p class="masthead__lead">${v.t.sub}</p>
+          <div class="trust"><span>${v.t.trust}</span><span>${v.t.kaspi}</span></div>
+        </div>
+      </section>
 
-      <div style="margin-top:44px; padding-top:20px; border-top:1px solid rgba(23,23,26,.08); display:flex; flex-wrap:wrap; gap:8px 20px; justify-content:space-between; font-size:13px; color:#6B6A66">
-        <span>${v.t.trust}</span>
-        <a href=${'https://wa.me/77064484218' + (savedTokens().length ? '?text=' + encodeURIComponent('ID: ' + savedTokens().map(t => t.slice(0, 8)).join(', ')) : '')} target="_blank" style="color:#6B6A66">${v.t.help}</a>
-      </div>
+      <section class="sec sec--grid">
+        <div class="container">
+
+        ${v.loadError
+          ? html`<div class="reload">
+              <span>${v.t.loadErr}</span>
+              <button onClick=${v.reload} class="btn btn--ghost btn--sm">${v.t.retryLoad}</button>
+            </div>`
+          : html`<div class="grid">
+            ${v.loading
+              ? [1,2,3,4,5,6,7,8].map(i => html`<div key=${i} class="skel" aria-hidden="true">
+                  <div class="skel__thumb"></div>
+                  <div class="skel__line" style="width:70%"></div>
+                </div>`)
+              : v.templates.map((item, i) => this.card(v, item, i))}
+          </div>`}
+        ${!v.loading && !v.loadError && !v.templates.length && html`<p class="empty">${v.t.empty}</p>`}
+
+        </div>
+      </section>
+
+      <section class="sec sec--facts">
+        <div class="container">
+          <div class="facts">
+            ${v.facts.map(f => html`<div class="fact" key=${f.t}>
+              <div class="fact__t">${f.t}</div>
+              <p class="fact__d">${f.d}</p>
+            </div>`)}
+          </div>
+        </div>
+      </section>
     </div>`;
   }
 
   detail(v) {
     const { cur } = v;
     if (!cur) return null;
-    return html`<div style="max-width:960px; margin:0 auto; padding:12px 16px 0; animation:fade .3s ease both">
-      <button onClick=${v.goHome} style="border:0; background:none; cursor:pointer; padding:8px 0; margin-bottom:6px; display:flex; align-items:center; gap:6px; font-size:15px; font-weight:500; color:#5F5E59">${ICON.back}${v.t.back}</button>
-      <div style="display:flex; flex-wrap:wrap; gap:24px 48px; justify-content:center; align-items:flex-start">
-        <div style="flex:1 1 320px; max-width:420px; display:flex; justify-content:center">
-          <video src=${cur.clip_url} poster=${cur.poster_url} muted loop playsinline autoplay
-            style="width:100%; aspect-ratio:${ar(cur)}; object-fit:cover; border-radius:26px; background:#E7E4DC; box-shadow:0 30px 60px -28px rgba(23,23,26,.5)"></video>
+    return html`<div class="container detail">
+      <button onClick=${v.goHome} class="back">${ICON.back}${v.t.back}</button>
+      <div class="detail__grid">
+        <div class="detail__media">
+          <video class="player" src=${cur.clip_url} poster=${cur.poster_url} muted loop playsinline autoplay
+            style=${`--ar:${(cur.aspect_w / cur.aspect_h).toFixed(4)}`}></video>
         </div>
 
-        <div style="flex:1 1 340px; max-width:420px; min-width:0; display:flex; flex-direction:column">
-          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px">
-            <h1 style="margin:0; font-weight:800; font-size:26px; letter-spacing:-.03em; line-height:1.15">${cur.name}</h1>
-            <span style="font-size:20px; font-weight:700; white-space:nowrap">${v.priceStr}</span>
-          </div>
-          <p style="margin:8px 0 0; font-size:16px; line-height:1.45; color:#5F5E59; text-wrap:pretty">${cur.desc}</p>
-          <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap">
-            ${[`${cur.ref_photos} фото`, `${Math.round(cur.duration_sec)} ${v.t.sec}`, `${cur.aspect_w}:${cur.aspect_h}`].map(x =>
-              html`<span key=${x} style="height:28px; padding:0 11px; border-radius:999px; background:#ECE9E2; font-size:13px; font-weight:500; display:flex; align-items:center">${x}</span>`)}
+        <div class="detail__panel">
+          <div>
+            <div class="ttl">
+              <h1>${cur.name}</h1>
+              <span class="price num">${v.priceStr}</span>
+            </div>
+            <p class="desc">${cur.desc}</p>
+            <div class="chips">
+              ${[`${cur.ref_photos} ${v.t.photos}`, `${Math.round(cur.duration_sec)} ${v.t.sec}`, `${cur.aspect_w}:${cur.aspect_h}`].map(x =>
+                html`<span key=${x} class="chip num">${x}</span>`)}
+            </div>
           </div>
 
           ${v.resolutions.length > 1 && html`
-            <div style="margin-top:20px">
-              <div style="font-size:13px; color:#6B6A66; margin-bottom:8px">${v.t.quality}</div>
-              <div style="display:grid; grid-template-columns:repeat(${v.resolutions.length}, 1fr); gap:8px">
+            <div class="field">
+              <div class="field__label" id="q-label">${v.t.quality}</div>
+              <div class="segs" style=${`--n:${v.resolutions.length}`} role="group" aria-labelledby="q-label">
                 ${v.resolutions.map(r => html`
-                  <button key=${r.id} onClick=${r.pick} style="cursor:pointer; padding:10px 6px; border-radius:16px; background:${r.on ? '#17171A' : '#fff'}; color:${r.on ? '#fff' : '#17171A'}; border:1px solid ${r.on ? '#17171A' : 'rgba(23,23,26,.12)'}; transition:background .2s">
-                    <div style="font-size:15px; font-weight:600">${r.label}</div>
-                    <div style="font-size:13px; margin-top:2px; color:${r.on ? '#D2FF3A' : '#6B6A66'}">${r.price}</div>
+                  <button key=${r.id} class="seg" aria-pressed=${r.on} onClick=${r.pick}>
+                    <span class="seg__px num">${r.label}</span>
+                    <span class="seg__price num">${r.price}</span>
                   </button>`)}
               </div>
             </div>`}
 
-          <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px">
-            ${v.slots.map(s => html`
-              <button key=${s.i} onClick=${s.pick} class="press" style="width:100%; cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px; border-radius:20px; text-align:left; background:${s.bg}; border:${s.border}; transition:all .2s ease">
-                <div style="position:relative; width:64px; height:64px; flex:none; border-radius:14px; overflow:hidden; background:#ECE9E2 center/cover ${s.has ? `url(${s.url})` : 'none'}; display:flex; align-items:center; justify-content:center">
-                  ${!s.has && ICON.plus}
-                  ${s.has && html`<span style="position:absolute; right:4px; bottom:4px; width:20px; height:20px; border-radius:50%; background:#D2FF3A; display:flex; align-items:center; justify-content:center; animation:popIn .3s ease both">${ICON.tick}</span>`}
-                </div>
-                <div style="flex:1; min-width:0">
-                  <div style="font-size:16px; font-weight:600; color:#17171A">${s.title}</div>
-                  <div style="font-size:14px; color:#5F5E59; margin-top:3px">${s.sub}</div>
-                </div>
-                ${s.has && html`<span style="font-size:14px; font-weight:600; color:#17171A; padding:0 6px">${v.t.replace}</span>`}
-              </button>`)}
-            ${v.uploadError && html`
-              <div style="display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:16px; background:#FBEDE7; color:#8A2E12; font-size:14px; line-height:1.4; animation:fadeUp .25s ease both">${ICON.warn}<span>${v.uploadError}</span></div>`}
-            ${v.canRetryFree && html`<div style="padding:12px 14px; border-radius:16px; background:#EEF8C8; font-size:14px; line-height:1.4">${v.t.retryNote}</div>`}
+          <div class="field">
+            <div class="slots">
+              ${v.slots.map(s => html`
+                <button key=${s.i} onClick=${s.pick} class=${'slot' + (s.has ? '' : ' slot--empty')}>
+                  <span class="slot__pic">
+                    ${s.has ? html`<img src=${s.url} alt="" />` : ICON.plus}
+                    ${s.has && html`<span class="slot__tick">${ICON.tick}</span>`}
+                  </span>
+                  <span class="slot__ttl">${s.title}</span>
+                  <span class="slot__sub">${s.has ? v.t.replace : s.sub}</span>
+                </button>`)}
+            </div>
+            ${v.uploadError && html`<div class="alert" role="alert">${ICON.warn}<span>${v.uploadError}</span></div>`}
+            ${v.canRetryFree && html`<div class="note">${v.t.retryNote}</div>`}
           </div>
 
-          <div style="position:sticky; bottom:0; margin-top:18px; padding:12px 0 calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(180deg, rgba(245,243,238,0), #F5F3EE 24%)">
-            <button onClick=${v.canRetryFree ? v.doRetry : v.onCta} class="press" style="position:relative; overflow:hidden; width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600; letter-spacing:-.01em; display:flex; align-items:center; justify-content:center; gap:8px; opacity:${v.ctaOpacity}; transition:transform .15s, opacity .2s; box-shadow:0 14px 28px -14px rgba(23,23,26,.6)">
-              ${v.busy && html`<span style="position:absolute; left:0; top:0; bottom:0; width:${v.pct}; background:rgba(210,255,58,.18); transition:width .15s linear"></span>`}
-              <span style="position:relative">${v.canRetryFree ? v.t.ctaRetry : v.ctaLabel}</span>
-              <span style="position:relative; color:#D2FF3A">${v.canRetryFree ? '' : v.ctaPrice}</span>
+          <div class="dock">
+            <button onClick=${v.canRetryFree ? v.doRetry : v.onCta} disabled=${v.busy}
+              class="btn btn--primary btn--wide" style=${`--pct:${v.pctNum}`}>
+              ${v.busy && html`<span class="btn__prog" aria-hidden="true"></span>`}
+              <span class="btn__label">${v.canRetryFree ? v.t.ctaRetry : v.ctaLabel}</span>
+              ${v.canRetryFree
+                ? html`<span class="btn__price">${v.t.free}</span>`
+                : v.ctaPrice && html`<span class="btn__price num">${v.ctaPrice}</span>`}
             </button>
-            <div style="margin-top:10px; text-align:center; font-size:13px; color:#6B6A66">${v.t.trust}</div>
+            <div class="dock__note">${v.t.trust}</div>
           </div>
         </div>
       </div>
@@ -598,135 +892,146 @@ class App extends Component {
 
   gen(v) {
     const cur = v.cur;
-    return html`<div style="max-width:460px; margin:0 auto; padding:28px 16px 48px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:fade .4s ease both">
-      <div style="position:relative; width:100%; max-width:340px; aspect-ratio:${cur ? ar(cur) : '9/16'}; border-radius:26px; overflow:hidden; background:#E7E4DC center/cover url(${cur ? cur.poster_url : ''}); animation:breathe 2.6s ease-in-out infinite">
-        <div style="position:absolute; inset:0; background:rgba(23,23,26,.28); backdrop-filter:blur(6px)"></div>
-        <div style="position:absolute; left:0; right:0; height:35%; background:linear-gradient(180deg, rgba(210,255,58,0), rgba(210,255,58,.45), rgba(210,255,58,0)); animation:scan 2.4s cubic-bezier(.5,0,.5,1) infinite"></div>
-        ${v.firstPhoto && html`<div style="position:absolute; left:50%; top:50%; width:72px; height:72px; margin:-36px 0 0 -36px; border-radius:50%; background:center/cover url(${v.firstPhoto}); border:3px solid #fff; box-shadow:0 8px 20px rgba(0,0,0,.3)"></div>`}
+    return html`<div class="container stage">
+      <div class="genframe" style=${cur ? `--ar:${(cur.aspect_w / cur.aspect_h).toFixed(4)}` : ''}>
+        ${cur && cur.poster_url && html`<img class="genframe__img" src=${cur.poster_url} alt="" />`}
+        <span class="genframe__veil" aria-hidden="true"></span>
+        ${v.firstPhoto && html`<img class="genframe__face" src=${v.firstPhoto} alt="" />`}
       </div>
-      <h1 style="margin:28px 0 0; font-weight:800; font-size:24px; letter-spacing:-.03em">${v.t.genTitle}</h1>
-      <div style="margin-top:10px; height:22px; font-size:15px; font-weight:500; display:flex; align-items:center; gap:8px">
-        <span style="width:7px; height:7px; border-radius:50%; background:#17171A; animation:pulse 1s infinite"></span><span>${v.stepText}</span>
+      <div>
+        <h1>${v.t.genTitle}</h1>
+        <div class="genstep" role="status">${v.stepText}</div>
       </div>
-      <div style="position:relative; margin-top:16px; width:180px; height:4px; border-radius:4px; background:#E4E1D9; overflow:hidden">
-        <div style="position:absolute; top:0; bottom:0; width:40%; border-radius:4px; background:#17171A; animation:slide 1.4s ease-in-out infinite"></div>
+      <div class="genbar" aria-hidden="true"><span class="genbar__fill"></span></div>
+      <div>
+        <p class="stage__note">${v.t.genNote}</p>
+        <p class="stage__note">${v.t.usually}</p>
       </div>
-      <p style="margin:18px 0 0; font-size:15px; line-height:1.45; color:#5F5E59; max-width:300px; text-wrap:balance">${v.t.genNote} · ${v.t.usually}</p>
 
-      <div style="margin-top:24px; width:100%; padding:14px 14px 14px 16px; border-radius:20px; background:#fff; border:1px solid rgba(23,23,26,.07); display:flex; align-items:center; gap:12px; text-align:left">
-        <div style="flex:1; min-width:0">
-          <div style="font-size:13px; color:#6B6A66">${v.t.orderLink}</div>
-          <div style="font-size:15px; font-weight:600; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${v.orderUrl}</div>
-        </div>
-        <button onClick=${v.copyLink} style="height:40px; padding:0 14px; border-radius:12px; border:0; cursor:pointer; background:#ECE9E2; font-size:14px; font-weight:600; white-space:nowrap">${v.copyLabel}</button>
+      <div class="linkbox">
+        <span class="linkbox__body">
+          <span class="linkbox__label" id="olabel">${v.t.orderLink}</span>
+          <span class="linkbox__value">${v.orderUrl}</span>
+        </span>
+        <button onClick=${v.copyLink} class="btn btn--ghost btn--sm" aria-describedby="olabel">${v.copyLabel}</button>
       </div>
     </div>`;
   }
 
   result(v) {
     const cur = v.cur;
-    return html`<div style="max-width:460px; margin:0 auto; padding:20px 16px 40px; display:flex; flex-direction:column; align-items:center; animation:fade .4s ease both">
-      <div style="display:flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:999px; background:#D2FF3A; font-size:14px; font-weight:600; animation:popIn .4s ease both">${ICON.checkAnim}${v.t.ready}</div>
-      <video src=${v.videoHref} poster=${cur ? cur.poster_url : ''} controls playsinline autoplay muted loop
-        style="width:100%; max-width:340px; margin-top:16px; aspect-ratio:${cur ? ar(cur) : '9/16'}; object-fit:cover; border-radius:26px; background:#E7E4DC; box-shadow:0 34px 70px -30px rgba(23,23,26,.6); animation:popIn .6s .1s ease both"></video>
-
-      <div style="width:100%; margin-top:22px; display:flex; flex-direction:column; gap:10px">
-        <a href=${v.videoHref} download class="press" style="width:100%; height:58px; border-radius:18px; background:#17171A; color:#fff; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none; box-shadow:0 14px 28px -14px rgba(23,23,26,.6)">
-          ${ICON.download}<span>${v.t.download}</span>
-        </a>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-          <button onClick=${v.share} style="height:52px; border-radius:16px; cursor:pointer; background:#fff; border:1px solid rgba(23,23,26,.1); font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px">${ICON.share}${v.shareLabel}</button>
-          <button onClick=${v.again} style="height:52px; border-radius:16px; cursor:pointer; background:#fff; border:1px solid rgba(23,23,26,.1); font-size:15px; font-weight:600">${v.t.more}</button>
+    return html`<div class="container stage">
+      <span class="ready">${ICON.checkAnim}${v.t.ready}</span>
+      <video class="result__video" src=${v.videoHref} poster=${cur ? cur.poster_url : ''} controls playsinline autoplay muted loop
+        style=${cur ? `--ar:${(cur.aspect_w / cur.aspect_h).toFixed(4)}` : ''}></video>
+      <div class="actions">
+        <a href=${v.videoHref} download class="btn btn--primary btn--wide">${ICON.download}<span>${v.t.download}</span></a>
+        <div class="actions__pair">
+          <button onClick=${v.share} class="btn btn--ghost">${ICON.share}${v.shareLabel}</button>
+          <button onClick=${v.again} class="btn btn--ghost">${v.t.more}</button>
         </div>
-        <div style="margin-top:6px; text-align:center; font-size:13px; color:#6B6A66">${v.t.keep}</div>
+        <div class="keepnote">${v.t.keep}</div>
       </div>
     </div>`;
   }
 
   fail(v) {
-    return html`<div style="max-width:420px; margin:0 auto; padding:36px 16px 48px; display:flex; flex-direction:column; align-items:center; text-align:center; animation:fade .4s ease both">
-      <div style="width:56px; height:56px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 30px -12px rgba(23,23,26,.4)">${ICON.face}</div>
-      <h1 style="margin:22px 0 0; font-weight:800; font-size:23px; letter-spacing:-.03em; text-wrap:balance">${v.refunded ? v.t.refundTitle : v.t.failTitle}</h1>
-      <p style="margin:10px 0 0; font-size:15px; line-height:1.5; color:#5F5E59; text-wrap:pretty">${v.refunded ? v.refundNote : v.t.failText}</p>
-      <div style="width:100%; margin-top:24px; display:flex; flex-direction:column; gap:10px">
-        ${v.notRefunded && v.o && v.o.can_retry && html`<button onClick=${v.startRetry} class="press" style="width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600">${v.t.retry}</button>`}
-        ${v.notRefunded && v.o && v.o.can_refund && html`<button onClick=${v.refund} style="width:100%; height:52px; border-radius:16px; cursor:pointer; background:transparent; border:1px solid rgba(23,23,26,.12); font-size:15px; font-weight:600">${v.t.refund}</button>`}
-        ${v.refunded && html`<button onClick=${v.again} style="width:100%; height:52px; border-radius:16px; cursor:pointer; background:#fff; border:1px solid rgba(23,23,26,.1); font-size:15px; font-weight:600">${v.t.home}</button>`}
+    return html`<div class="container stage">
+      <span class="facemark">${ICON.face}</span>
+      <div>
+        <h1>${v.refunded ? v.t.refundTitle : v.t.failTitle}</h1>
+        <p class="stage__note" style="margin-top:var(--space-sm)">${v.refunded ? v.refundNote : v.t.failText}</p>
+      </div>
+      <div class="actions">
+        ${v.notRefunded && v.o && v.o.can_retry && html`<button onClick=${v.startRetry} class="btn btn--primary btn--wide">${v.t.retry}</button>`}
+        ${v.notRefunded && v.o && v.o.can_refund && html`<button onClick=${v.refund} class="btn btn--ghost btn--wide">${v.t.refund}</button>`}
+        ${v.refunded && html`<button onClick=${v.again} class="btn btn--ghost btn--wide">${v.t.home}</button>`}
       </div>
     </div>`;
   }
 
   sheet(v) {
     const { cur } = v;
-    return html`<div onClick=${v.closeSheet} style="position:fixed; inset:0; z-index:50; background:rgba(23,23,26,.42); backdrop-filter:blur(3px); display:flex; justify-content:center; align-items:${v.sheetAlign}; padding:${v.sheetPad}; animation:fade .2s ease both">
-      <div onClick=${v.stop} style="width:100%; max-width:440px; background:#FBFAF7; border-radius:${v.sheetRadius}; padding:10px 18px calc(20px + env(safe-area-inset-bottom)); box-shadow:0 -10px 40px rgba(23,23,26,.2); animation:${v.sheetAnim}">
-        <div style="width:40px; height:5px; border-radius:5px; background:#DAD7CF; margin:0 auto 12px"></div>
-        <div style="display:flex; align-items:center; justify-content:space-between">
-          <span style="font-size:18px; font-weight:700">${v.t.payTitle}</span>
-          <button onClick=${v.closeSheet} aria-label="Закрыть" style="width:36px; height:36px; border-radius:50%; border:0; background:#ECE9E2; cursor:pointer; display:flex; align-items:center; justify-content:center">${ICON.close}</button>
+    return html`<div onClick=${v.closeSheet} class="scrim">
+      <div onClick=${v.stop} class="sheet" role="dialog" aria-modal="true" aria-labelledby="pay-ttl" tabindex="-1" ref=${this.sheetRef}>
+        <span class="sheet__grab" aria-hidden="true"></span>
+        <div class="sheet__head">
+          <span class="sheet__ttl" id="pay-ttl">${v.t.payTitle}</span>
+          <button onClick=${v.closeSheet} class="sheet__close" aria-label=${v.t.close}>${ICON.close}</button>
         </div>
 
-        <div style="margin-top:14px; display:flex; align-items:center; gap:14px; padding:12px; border-radius:18px; background:#fff; border:1px solid rgba(23,23,26,.07)">
-          <div style="width:44px; height:60px; border-radius:10px; flex:none; background:#E7E4DC center/cover url(${cur ? cur.poster_url : ''})"></div>
-          <div style="flex:1; min-width:0">
-            <div style="font-size:16px; font-weight:600">${cur ? cur.name : ''}</div>
-            <div style="font-size:13px; color:#6B6A66; margin-top:3px">${cur ? cur.ref_photos : 0} фото · ${v.o ? v.o.resolution : ''}</div>
-          </div>
-          ${v.firstPhoto && html`<div style="width:40px; height:40px; flex:none; border-radius:50%; background:center/cover url(${v.firstPhoto}); border:2px solid #fff; box-shadow:0 0 0 1px rgba(23,23,26,.1)"></div>`}
+        <div class="sheet__item">
+          ${cur && cur.poster_url && html`<img class="sheet__poster" src=${cur.poster_url} alt="" />`}
+          <span class="linkbox__body">
+            <span class="linkbox__value">${cur ? cur.name : ''}</span>
+            <span class="sheet__meta num">
+              <span>${cur ? cur.ref_photos : 0} ${v.t.photos}</span>
+              <span>${v.o ? v.o.resolution : ''}</span>
+            </span>
+          </span>
+          ${v.firstPhoto && html`<img class="sheet__face" src=${v.firstPhoto} alt="" />`}
         </div>
 
-        <div style="margin-top:18px; display:flex; align-items:flex-end; justify-content:space-between">
-          <div>
-            <div style="font-size:14px; color:#6B6A66">${v.t.total}</div>
-            <div style="font-size:13px; color:#6B6A66; margin-top:2px">${v.t.oneTime}</div>
-          </div>
-          <div style="font-size:28px; font-weight:700; letter-spacing:-.03em">${v.o ? fmt(v.o.amount_kzt) : v.priceStr}</div>
+        <div class="sheet__total">
+          <span>
+            <span class="field__label">${v.t.total}</span>
+            <span class="sheet__hint">${v.t.oneTime}</span>
+          </span>
+          <span class="sheet__sum num">${v.o ? fmt(v.o.amount_kzt) : v.priceStr}</span>
         </div>
 
-        <label style="display:block; margin-top:16px">
-          <div style="font-size:13px; color:#6B6A66; margin-bottom:6px">${v.t.emailLabel} <span style="color:#9A9993">· ${v.t.optional}</span></div>
-          <input type="email" value=${v.email} onInput=${v.onEmail} placeholder="name@mail.kz" style="width:100%; height:50px; padding:0 14px; border-radius:14px; border:1px solid rgba(23,23,26,.12); background:#fff; font-size:16px; outline:none" />
+        <label class="field">
+          <span class="sheet__hint"><span>${v.t.emailLabel}</span><span>${v.t.optional}</span></span>
+          <input class="input" type="email" value=${v.email} onInput=${v.onEmail} placeholder="name@mail.kz" />
         </label>
 
-        ${v.payFailed && html`<div style="margin-top:12px; padding:12px 14px; border-radius:14px; background:#FBEDE7; color:#8A2E12; font-size:14px; line-height:1.4; animation:fadeUp .25s ease both">${v.t.payFail}</div>`}
+        ${v.payFailed && html`<div class="alert" role="alert">${ICON.warn}<span>${v.t.payFail}</span></div>`}
 
         ${v.payWait ? html`
-          <div style="margin-top:16px; width:100%; height:58px; border-radius:18px; background:#ECE9E2; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
-            ${spinner('rgba(23,23,26,.2)', '#17171A')}<span>${v.t.waitPay}</span>
-          </div>
-          <a href=${v.payUrl} target="_blank" rel="noopener" style="display:block; margin-top:10px; text-align:center; font-size:14px; font-weight:600; color:#17171A">${v.t.reopen}</a>` : html`
-        <button onClick=${v.pay} class="press" style="margin-top:16px; width:100%; height:58px; border:0; border-radius:18px; cursor:pointer; background:#17171A; color:#fff; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
-          ${v.payBusy && spinner('rgba(255,255,255,.3)', '#fff')}
-          <span style="width:18px; height:18px; border-radius:6px; background:#E3262B"></span>
+          <div>
+            <div class="waitbtn"><span class="spinner spinner--light" aria-hidden="true"></span><span>${v.t.waitPay}</span></div>
+            <a href=${v.payUrl} target="_blank" rel="noopener" class="sheet__legal" style="margin-top:var(--space-sm)">${v.t.reopen}</a>
+          </div>` : html`
+        <button onClick=${v.pay} disabled=${v.payBusy} class="btn btn--primary btn--wide">
+          ${v.payBusy ? html`<span class="spinner" aria-hidden="true"></span>` : html`<span class="kaspi" aria-hidden="true"></span>`}
           <span>${v.payLabel}</span>
         </button>`}
-        <div style="margin-top:10px; text-align:center; font-size:12px; color:#6B6A66; display:flex; align-items:center; justify-content:center; gap:6px">${ICON.lock}${v.t.afterPay}</div>
+        <div class="sheet__legal">${ICON.lock}${v.t.afterPay}</div>
       </div>
     </div>`;
   }
 
   render() {
     const v = this.vals();
-    return html`<div style="min-height:100vh; font-family:'Golos Text', system-ui, sans-serif; background:#F5F3EE; color:#17171A; display:flex; flex-direction:column">
-      <input type="file" accept="image/*,.heic,.heif" ref=${this.fileRef} onChange=${e => this.onFile(e)} style="display:none" />
+    return html`<div class="shell">
+      <input type="file" accept="image/*,.heic,.heif" ref=${this.fileRef} onChange=${e => this.onFile(e)} class="filepick" tabindex="-1" aria-hidden="true" />
 
-      <header style="position:sticky; top:0; z-index:20; background:rgba(245,243,238,.86); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid rgba(23,23,26,.06)">
-        <div style="max-width:1200px; margin:0 auto; height:60px; padding:0 16px; display:flex; align-items:center; justify-content:space-between">
-          <button onClick=${v.goHome} style="all:unset; cursor:pointer; display:flex; align-items:center; gap:6px; font-family:'Unbounded', sans-serif; font-weight:700; font-size:19px; letter-spacing:-.02em">qaitala<span style="width:7px; height:7px; border-radius:50%; background:#D2FF3A; box-shadow:0 0 0 1.5px #17171A; margin-top:6px"></span><span style="font-weight:600; color:#6B6A66">kz</span></button>
-          <div style="display:flex; gap:2px; padding:3px; border-radius:999px; background:#ECE9E2">
-            ${[['ru','RU'],['kz','ҚАЗ']].map(([id, label]) => html`
-              <button key=${id} onClick=${() => v.setLang(id)} style="border:0; cursor:pointer; height:30px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; background:${v.lang === id ? '#17171A' : 'transparent'}; color:${v.lang === id ? '#fff' : '#5F5E59'}; transition:background .2s">${label}</button>`)}
+      <header class="topbar" inert=${v.sheetOpen}>
+        <div class="container topbar__in">
+          <button onClick=${v.goHome} class="brand">qaitala<span class="brand__dot" aria-hidden="true"></span><span class="brand__kz">kz</span></button>
+          <div class="langs">
+            ${[['ru','Рус'],['kz','Қаз']].map(([id, label]) => html`
+              <button key=${id} class="lang" aria-pressed=${v.lang === id} onClick=${() => v.setLang(id)}>${label}</button>`)}
           </div>
         </div>
       </header>
 
-      <main style="flex:1; width:100%">
+      <main class="main" inert=${v.sheetOpen}>
         ${v.isHome && this.home(v)}
         ${v.isDetail && this.detail(v)}
         ${v.isGen && this.gen(v)}
         ${v.isResult && this.result(v)}
         ${v.isFail && this.fail(v)}
       </main>
+
+      ${v.isHome && html`
+        <footer class="container foot" inert=${v.sheetOpen}>
+          <div class="foot__mark">qaitala<span class="brand__dot" aria-hidden="true"></span>kz</div>
+          <div class="foot__links">
+            <span>${v.t.trust}</span>
+            <a href=${v.helpHref} target="_blank" rel="noopener">${v.t.help}</a>
+          </div>
+        </footer>`}
 
       ${v.sheetOpen && this.sheet(v)}
     </div>`;
