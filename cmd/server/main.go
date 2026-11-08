@@ -59,6 +59,7 @@ func main() {
 
 	handler.IndexHTML = qaitala.IndexHTML
 	handler.AdminHTML = qaitala.AdminHTML
+	handler.SocialImage = qaitala.SocialImage
 
 	e := echo.New()
 	e.HideBanner, e.HidePort = true, true

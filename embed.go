@@ -11,5 +11,8 @@ var IndexHTML []byte
 //go:embed admin.html
 var AdminHTML []byte
 
+//go:embed assets/qaitala-social-logo-1080.png
+var SocialImage []byte
+
 //go:embed migrations/*.sql
 var Migrations embed.FS

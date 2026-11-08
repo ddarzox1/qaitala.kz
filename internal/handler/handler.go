@@ -51,6 +51,9 @@ func (h *Handler) Register(e *echo.Echo) {
 		h.registerAdmin(e)
 	}
 
+	e.GET("/robots.txt", h.Robots)
+	e.GET("/sitemap.xml", h.Sitemap)
+	e.GET("/og-image.png", h.OGImage)
 	e.GET("/", h.Index)
 	e.GET("/o/:token", h.Index)
 }
