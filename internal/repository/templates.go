@@ -19,14 +19,14 @@ func NewTemplates(db *pgxpool.Pool) *Templates { return &Templates{db: db} }
 
 const tplCols = `id, name, desc_ru, desc_kz, clip_key, poster_key, duration_sec,
 	aspect_w, aspect_h, ref_photos, slot_labels_ru, slot_labels_kz, hf_prompt,
-	price_480p, price_720p, price_1080p, popular, sort, active`
+	price_480p, price_720p, price_1080p, popular, sort, active, video_uploaded_at`
 
 func scanTemplate(row pgx.Row) (*model.Template, error) {
 	var t model.Template
 	err := row.Scan(&t.ID, &t.Name, &t.DescRu, &t.DescKz, &t.ClipURL, &t.PosterURL,
 		&t.DurationSec, &t.AspectW, &t.AspectH, &t.RefPhotos, &t.SlotLabelsRu,
 		&t.SlotLabelsKz, &t.Prompt, &t.Price480, &t.Price720, &t.Price1080,
-		&t.Popular, &t.Sort, &t.Active)
+		&t.Popular, &t.Sort, &t.Active, &t.VideoUploadedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -39,7 +39,11 @@ func scanTemplate(row pgx.Row) (*model.Template, error) {
 // ListActive отдаёт каталог. ClipURL/PosterURL здесь ещё ключи S3 — в публичные
 // ссылки их превращает хендлер, он один знает базовый адрес хранилища.
 func (r *Templates) ListActive(ctx context.Context) ([]*model.Template, error) {
-	rows, err := r.db.Query(ctx, `SELECT `+tplCols+` FROM templates WHERE active ORDER BY sort, id`)
+	// Метаданные можно редактировать отдельно от ролика, поэтому свежесть считаем
+	// по моменту загрузки самого видео. sort остаётся запасным порядком для старых
+	// записей, которым миграция выставила одинаковое время.
+	rows, err := r.db.Query(ctx, `SELECT `+tplCols+` FROM templates WHERE active
+		ORDER BY video_uploaded_at DESC, sort DESC, id DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("templates list: %w", err)
 	}
@@ -104,7 +108,8 @@ func (r *Templates) Upsert(ctx context.Context, t *model.Template) error {
 			slot_labels_ru=excluded.slot_labels_ru, slot_labels_kz=excluded.slot_labels_kz,
 			hf_prompt=excluded.hf_prompt, price_480p=excluded.price_480p,
 			price_720p=excluded.price_720p, price_1080p=excluded.price_1080p,
-			popular=excluded.popular, active=excluded.active, sort=excluded.sort`,
+			popular=excluded.popular, active=excluded.active, sort=excluded.sort,
+			video_uploaded_at=now()`,
 		t.ID, t.Name, t.DescRu, t.DescKz, t.ClipURL, t.PosterURL,
 		t.DurationSec, t.AspectW, t.AspectH, t.RefPhotos, t.SlotLabelsRu, t.SlotLabelsKz,
 		t.Prompt, t.Price480, t.Price720, t.Price1080, t.Popular, t.Active, t.Sort)

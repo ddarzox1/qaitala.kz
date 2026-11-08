@@ -21,27 +21,28 @@ const (
 var Resolutions = []string{"480p", "720p", "1080p"}
 
 type Template struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	DescRu       string   `json:"-"`
-	DescKz       string   `json:"-"`
-	Desc         string   `json:"desc"`
-	ClipURL      string   `json:"clip_url"`
-	PosterURL    string   `json:"poster_url"`
-	DurationSec  float64  `json:"duration_sec"`
-	AspectW      int      `json:"aspect_w"`
-	AspectH      int      `json:"aspect_h"`
-	RefPhotos    int      `json:"ref_photos"`
-	SlotLabelsRu []string `json:"-"`
-	SlotLabelsKz []string `json:"-"`
-	SlotLabels   []string `json:"slot_labels"`
-	Prompt       string   `json:"-"`
-	Price480     *int     `json:"price_480p"`
-	Price720     *int     `json:"price_720p"`
-	Price1080    *int     `json:"price_1080p"`
-	Popular      bool     `json:"popular"`
-	Sort         int      `json:"-"`
-	Active       bool     `json:"-"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	DescRu          string    `json:"-"`
+	DescKz          string    `json:"-"`
+	Desc            string    `json:"desc"`
+	ClipURL         string    `json:"clip_url"`
+	PosterURL       string    `json:"poster_url"`
+	DurationSec     float64   `json:"duration_sec"`
+	AspectW         int       `json:"aspect_w"`
+	AspectH         int       `json:"aspect_h"`
+	RefPhotos       int       `json:"ref_photos"`
+	SlotLabelsRu    []string  `json:"-"`
+	SlotLabelsKz    []string  `json:"-"`
+	SlotLabels      []string  `json:"slot_labels"`
+	Prompt          string    `json:"-"`
+	Price480        *int      `json:"price_480p"`
+	Price720        *int      `json:"price_720p"`
+	Price1080       *int      `json:"price_1080p"`
+	Popular         bool      `json:"popular"`
+	Sort            int       `json:"-"`
+	Active          bool      `json:"-"`
+	VideoUploadedAt time.Time `json:"-"`
 }
 
 // Localize заполняет поля, зависящие от языка. Клиенту уходит только нужный язык.

@@ -133,6 +133,10 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.16e
 .sec--grid { padding-bottom: 0; }
 .masthead__lead { margin-top: var(--space-md); font-size: var(--text-lead); color: var(--color-ink-2); max-width: 42ch; }
 .trust { margin-top: var(--space-lg); display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); font-size: var(--text-sm); color: var(--color-muted); }
+.catalog-tabs { display: inline-flex; gap: var(--space-3xs); margin-bottom: var(--space-lg); padding: var(--space-3xs); border-radius: var(--radius-pill); background: var(--color-paper-2); }
+.catalog-tab { min-height: var(--control-h-sm); padding-inline: var(--space-md); border-radius: var(--radius-pill); color: var(--color-ink-2); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.catalog-tab:hover { color: var(--color-ink); }
+.catalog-tab[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); }
 
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); grid-auto-flow: row dense; align-items: start; }
 @media (min-width: 37.5rem) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg); } }
@@ -321,7 +325,7 @@ const fmt = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₸';
 const RES = ['480p', '720p', '1080p'];
 
 const T = {
-  ru: { h1:'Повтори тренд со своим лицом', sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', back:'Все видео', sec:'сек', photos:'фото', trust:'Без регистрации и подписки', kaspi:'Оплата через Kaspi QR', help:'Вопросы? Напиши в WhatsApp', open:'Открыть', close:'Закрыть', soundOn:'Включить звук', soundOff:'Выключить звук',
+  ru: { h1:'Повтори тренд со своим лицом', sub:'Выбери видео, загрузи фото — получи свою версию.', popular:'Популярное', latestTab:'Последние', popularTab:'Популярные', catalogSort:'Сортировка видео', back:'Все видео', sec:'сек', photos:'фото', trust:'Без регистрации и подписки', kaspi:'Оплата через Kaspi QR', help:'Вопросы? Напиши в WhatsApp', open:'Открыть', close:'Закрыть', soundOn:'Включить звук', soundOff:'Выключить звук',
     empty:'Пока ничего нет. Загляни позже.', loadErr:'Не удалось загрузить каталог', retryLoad:'Повторить',
     resumeGen:'Твоё видео создаётся', resumeDone:'Твоё видео готово', resumeFail:'Нужно другое фото',
     quality:'Качество', slotHint:'Лицо крупно, хороший свет', added:'Фото добавлено', replace:'Заменить',
@@ -338,7 +342,7 @@ const T = {
       { t:'Оплата через Kaspi QR', d:'Начнём создавать видео сразу после оплаты.' },
       { t:'Обычно 5–10 минут', d:'Видео доступно по ссылке 30 дней.' },
     ] },
-  kz: { h1:'Трендті өз бетіңмен қайтала', sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', back:'Барлық видео', sec:'сек', photos:'фото', trust:'Тіркелусіз және жазылымсыз', kaspi:'Kaspi QR арқылы төлем', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу', close:'Жабу', soundOn:'Дыбысты қосу', soundOff:'Дыбысты өшіру',
+  kz: { h1:'Трендті өз бетіңмен қайтала', sub:'Видео таңда, фото жүкте — өз нұсқаңды ал.', popular:'Танымал', latestTab:'Соңғылар', popularTab:'Танымал', catalogSort:'Видеоларды сұрыптау', back:'Барлық видео', sec:'сек', photos:'фото', trust:'Тіркелусіз және жазылымсыз', kaspi:'Kaspi QR арқылы төлем', help:'Сұрақ бар ма? WhatsApp-қа жаз', open:'Ашу', close:'Жабу', soundOn:'Дыбысты қосу', soundOff:'Дыбысты өшіру',
     empty:'Әзірге ештеңе жоқ. Кейінірек кіріп шық.', loadErr:'Каталогты жүктеу мүмкін болмады', retryLoad:'Қайталау',
     resumeGen:'Видеоң жасалып жатыр', resumeDone:'Видеоң дайын', resumeFail:'Басқа фото керек',
     quality:'Сапасы', slotHint:'Бет анық, жарық жақсы', added:'Фото қосылды', replace:'Ауыстыру',
@@ -444,7 +448,7 @@ class App extends Component {
   state = {
     screen:'home', tplId:'', lang:'ru', resolution:'', photos:[], uploadError:'',
     sheet:null, email:'', step:0, copied:false, playing:true, shared:false, isDesk:false, muted:true,
-    loading:true, loadError:'', templates:[], order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false,
+    loading:true, loadError:'', templates:[], catalogMode:'latest', order:null, orders:[], payUrl:'', pct:0, busy:false, refunded:false,
   };
 
   componentDidMount() {
@@ -460,7 +464,7 @@ class App extends Component {
   }
   componentDidUpdate(_, prev) {
     const st = this.state;
-    if (prev.templates !== st.templates || prev.screen !== st.screen || prev.isDesk !== st.isDesk) {
+    if (prev.templates !== st.templates || prev.catalogMode !== st.catalogMode || prev.screen !== st.screen || prev.isDesk !== st.isDesk) {
       this.syncPreviews();
     }
     // Фокус уходит в шит и возвращается туда, откуда пришёл; остальное делает inert.
@@ -694,6 +698,9 @@ class App extends Component {
   vals() {
     const s = this.state, L = T[s.lang], cur = this.tpl(), o = s.order;
     const price = cur ? priceOf(cur, s.resolution) : null;
+    const catalogTemplates = s.catalogMode === 'popular'
+      ? s.templates.filter(t => t.popular)
+      : s.templates;
 
     const slots = cur ? Array.from({ length: cur.ref_photos }, (_, i) => {
       const p = s.photos[i];
@@ -726,7 +733,8 @@ class App extends Component {
       goHome:() => { this.stopTimers(); this.setState({ screen:'home', sheet:null, photos:[] }); this.loadOrders(); window.scrollTo(0,0); },
       isHome:s.screen === 'home', isDetail:s.screen === 'detail', isGen:s.screen === 'gen',
       isResult:s.screen === 'result', isFail:s.screen === 'fail',
-      loading:s.loading, loadError:s.loadError, templates:s.templates,
+      loading:s.loading, loadError:s.loadError, templates:s.templates, catalogTemplates,
+      catalogMode:s.catalogMode, setCatalogMode: catalogMode => this.setState({ catalogMode }),
       reload:() => { this.setState({ loading:true, loadError:'' }); this.loadTemplates(); },
 
       myOrders: s.orders.map(x => ({ token:x.token,
@@ -828,6 +836,13 @@ class App extends Component {
       <section class="sec sec--grid">
         <div class="container">
 
+        <div class="catalog-tabs" role="group" aria-label=${v.t.catalogSort}>
+          <button class="catalog-tab" aria-pressed=${v.catalogMode === 'latest'}
+            onClick=${() => v.setCatalogMode('latest')}>${v.t.latestTab}</button>
+          <button class="catalog-tab" aria-pressed=${v.catalogMode === 'popular'}
+            onClick=${() => v.setCatalogMode('popular')}>${v.t.popularTab}</button>
+        </div>
+
         ${v.loadError
           ? html`<div class="reload">
               <span>${v.t.loadErr}</span>
@@ -839,9 +854,9 @@ class App extends Component {
                   <div class="skel__thumb"></div>
                   <div class="skel__line" style="width:70%"></div>
                 </div>`)
-              : v.templates.map((item, i) => this.card(v, item, i))}
+              : v.catalogTemplates.map((item, i) => this.card(v, item, i))}
           </div>`}
-        ${!v.loading && !v.loadError && !v.templates.length && html`<p class="empty">${v.t.empty}</p>`}
+        ${!v.loading && !v.loadError && !v.catalogTemplates.length && html`<p class="empty">${v.t.empty}</p>`}
 
         </div>
       </section>

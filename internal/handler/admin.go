@@ -35,9 +35,10 @@ func (h *Handler) registerAdmin(e *echo.Echo) {
 
 type adminTemplate struct {
 	service.TemplateInput
-	ClipURL     string  `json:"clip_url"`
-	PosterURL   string  `json:"poster_url"`
-	DurationSec float64 `json:"duration_sec"`
+	ClipURL         string    `json:"clip_url"`
+	PosterURL       string    `json:"poster_url"`
+	DurationSec     float64   `json:"duration_sec"`
+	VideoUploadedAt time.Time `json:"video_uploaded_at"`
 }
 
 func (h *Handler) AdminListTemplates(c echo.Context) error {
@@ -54,9 +55,10 @@ func (h *Handler) AdminListTemplates(c echo.Context) error {
 				Price480: t.Price480, Price720: t.Price720, Price1080: t.Price1080,
 				Popular: t.Popular, Sort: t.Sort, Active: t.Active,
 			},
-			ClipURL:     h.store.PublicURL(t.ClipURL),
-			PosterURL:   h.store.PublicURL(t.PosterURL),
-			DurationSec: t.DurationSec,
+			ClipURL:         h.store.PublicURL(t.ClipURL),
+			PosterURL:       h.store.PublicURL(t.PosterURL),
+			DurationSec:     t.DurationSec,
+			VideoUploadedAt: t.VideoUploadedAt,
 		})
 	}
 	return c.JSON(http.StatusOK, out)

@@ -41,8 +41,8 @@ button:disabled{opacity:.5;cursor:wait}
 
 <h1 style="margin-top:32px">Шаблоны</h1>
 <table>
-  <thead><tr><th></th><th>id</th><th>Название</th><th>Длина</th><th>Фото</th><th>Цены 480/720/1080</th><th>В каталоге</th><th></th></tr></thead>
-  <tbody id="list"><tr><td colspan="8" class="muted">Загрузка…</td></tr></tbody>
+  <thead><tr><th></th><th>id</th><th>Название</th><th>Видео загружено</th><th>Длина</th><th>Фото</th><th>Цены 480/720/1080</th><th>На главной</th><th></th></tr></thead>
+  <tbody id="list"><tr><td colspan="9" class="muted">Загрузка…</td></tr></tbody>
 </table>
 
 <h2 id="formTitle">Новый шаблон</h2>
@@ -50,7 +50,7 @@ button:disabled{opacity:.5;cursor:wait}
   <div class="row">
     <label>id (папка, латиница)<input name="id" required pattern="[a-z0-9_\-]{1,40}"></label>
     <label>Название<input name="name" required></label>
-    <label>Порядок в каталоге<input name="sort" type="number" value="0"></label>
+    <label>Доп. порядок (при одинаковой дате)<input name="sort" type="number" value="0"></label>
   </div>
   <div class="row">
     <label>Описание ru<input name="desc_ru"></label>
@@ -67,12 +67,12 @@ button:disabled{opacity:.5;cursor:wait}
     <label>Цена 1080p, ₸<input name="price_1080p" type="number" min="1"></label>
   </div>
   <div class="row">
-    <label>Видео (4–30 сек; пусто = оставить прежнее)<input name="video" type="file" accept="video/*"></label>
+    <label>Видео для главной (4–30 сек; пусто = оставить прежнее)<input name="video" type="file" accept="video/*"></label>
     <label>Секунда постера (пусто = 35% длины)<input name="poster_at" type="number" step="0.1" min="0"></label>
   </div>
   <div class="row">
     <label class="check"><input name="popular" type="checkbox"> Плашка «Популярное»</label>
-    <label class="check"><input name="active" type="checkbox"> Показывать в каталоге</label>
+    <label class="check"><input name="active" type="checkbox"> Показывать на главной</label>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <button id="save">Сохранить</button>
@@ -91,6 +91,7 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const price = p => p == null ? '—' : p;
 const num = v => v === '' ? null : Number(v);
 const lines = v => v.split('\n').map(s => s.trim()).filter(Boolean);
+const date = v => v ? new Date(v).toLocaleString('ru-RU', {dateStyle:'short', timeStyle:'short'}) : '—';
 
 async function api(url, opts) {
   const r = await fetch(url, opts);
@@ -106,13 +107,14 @@ async function load() {
       <td><a href="${esc(t.clip_url)}" target="_blank"><img src="${esc(t.poster_url)}" alt=""></a></td>
       <td>${esc(t.id)}</td>
       <td>${esc(t.name)}${t.popular ? ' <span class="muted">★</span>' : ''}</td>
+      <td class="muted">${date(t.video_uploaded_at)}</td>
       <td>${t.duration_sec.toFixed(1)}с</td>
       <td>${t.slot_labels_ru.length}</td>
       <td>${price(t.price_480p)} / ${price(t.price_720p)} / ${price(t.price_1080p)}</td>
       <td><input type="checkbox" data-active="${i}" ${t.active ? 'checked' : ''} ${noPrice && !t.active ? 'disabled title="Сначала задай цену"' : ''}></td>
-      <td><button class="ghost" data-edit="${i}">Изменить</button></td>
+      <td><button class="ghost" data-edit="${i}">Изменить / заменить видео</button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="8" class="muted">Пока пусто — заведи первый шаблон ниже.</td></tr>';
+  }).join('') : '<tr><td colspan="9" class="muted">Пока пусто — заведи первый шаблон ниже.</td></tr>';
 }
 
 $('#list').addEventListener('click', async e => {
@@ -206,7 +208,7 @@ $('#refunds').addEventListener('click', async e => {
 });
 
 loadRefunds().catch(err => { $('#refunds').innerHTML = `<tr><td colspan="7" class="err">${esc(err.message)}</td></tr>`; });
-load().catch(err => { $('#list').innerHTML = `<tr><td colspan="8" class="err">${esc(err.message)}</td></tr>`; });
+load().catch(err => { $('#list').innerHTML = `<tr><td colspan="9" class="err">${esc(err.message)}</td></tr>`; });
 </script>
 </body>
 </html>
