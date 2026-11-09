@@ -38,6 +38,7 @@ func (h *Handler) Register(e *echo.Echo) {
 	e.POST("/api/orders/:token/retry", h.Retry)
 	e.POST("/api/orders/:token/refund", h.Refund)
 	e.GET("/api/orders/:token/video", h.Video)
+	e.GET("/api/orders/:token/download", h.DownloadVideo)
 
 	e.POST("/webhooks/kaspi", h.KaspiWebhook)
 	e.POST("/webhooks/higgsfield/:secret", h.HiggsfieldWebhook)

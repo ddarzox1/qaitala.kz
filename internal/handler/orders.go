@@ -214,3 +214,36 @@ func (h *Handler) Video(c echo.Context) error {
 	}
 	return c.Redirect(http.StatusFound, url)
 }
+
+// DownloadVideo отдаёт ролик через наш домен с attachment-заголовком.
+// HTML-атрибут download не работает после редиректа на R2, особенно в
+// мобильных браузерах: они просто открывают MP4 во вкладке.
+func (h *Handler) DownloadVideo(c echo.Context) error {
+	ctx := c.Request().Context()
+	o, err := h.orders.ByToken(ctx, c.Param("token"))
+	if errors.Is(err, repository.ErrNotFound) {
+		return fail(c, http.StatusNotFound, "заказ не найден")
+	}
+	if err != nil {
+		return h.oops(c, err, "скачивание видео: заказ")
+	}
+	if o.Status != model.StatusDone || o.VideoKey == "" {
+		return fail(c, http.StatusConflict, "видео ещё не готово")
+	}
+
+	body, err := h.store.Get(ctx, o.VideoKey)
+	if err != nil {
+		return h.oops(c, err, "скачивание видео: файл")
+	}
+	defer body.Close()
+
+	return streamVideoDownload(c, body)
+}
+
+func streamVideoDownload(c echo.Context, body io.Reader) error {
+	h := c.Response().Header()
+	h.Set("Content-Disposition", `attachment; filename="qaitala-video.mp4"`)
+	h.Set("Cache-Control", "private, no-store")
+	h.Set("X-Content-Type-Options", "nosniff")
+	return c.Stream(http.StatusOK, "application/octet-stream", body)
+}

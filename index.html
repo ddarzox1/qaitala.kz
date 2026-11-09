@@ -814,6 +814,7 @@ class App extends Component {
       muted:s.muted, soundLabel:s.muted ? L.soundOn : L.soundOff,
       toggleMute:e => this.toggleMute(e),
       videoHref: o ? `/api/orders/${o.token}/video` : '#',
+      downloadHref: o ? `/api/orders/${o.token}/download` : '#',
       shareLabel: s.shared ? L.copied : L.share,
       share:() => { const url = location.origin + '/o/' + o.token;
         if (navigator.share) navigator.share({ url }).catch(() => {});
@@ -1024,7 +1025,7 @@ class App extends Component {
       <video class="result__video" src=${v.videoHref} poster=${cur ? cur.poster_url : ''} controls playsinline autoplay muted loop
         style=${cur ? `--ar:${(cur.aspect_w / cur.aspect_h).toFixed(4)}` : ''}></video>
       <div class="actions">
-        <a href=${v.videoHref} download class="btn btn--primary btn--wide">${ICON.download}<span>${v.t.download}</span></a>
+        <a href=${v.downloadHref} download="qaitala-video.mp4" class="btn btn--primary btn--wide">${ICON.download}<span>${v.t.download}</span></a>
         <div class="actions__pair">
           <button onClick=${v.share} class="btn btn--ghost">${ICON.share}${v.shareLabel}</button>
           <button onClick=${v.again} class="btn btn--ghost">${v.t.more}</button>
